@@ -11,6 +11,7 @@
             --text-color: #f8fafc;
             --accent-color: #38bdf8;
             --alert-color: #f43f5e;
+            --pause-color: #f59e0b;
             --ev-color: #22c55e;
             --petrol-color: #ef4444;
             --hybrid-color: #eab308;
@@ -36,12 +37,14 @@
             padding: 20px;
             box-sizing: border-box;
             z-index: 10;
+            overflow-y: auto;
         }
 
         h1 {
             font-size: 1.2rem;
             color: var(--accent-color);
             margin-top: 0;
+            margin-bottom: 4px;
             text-transform: uppercase;
             letter-spacing: 1px;
             border-bottom: 2px solid #334155;
@@ -49,19 +52,36 @@
         }
 
         .stat-group {
-            margin-bottom: 20px;
+            margin-bottom: 14px;
+            background: rgba(15, 23, 42, 0.45);
+            padding: 10px 12px;
+            border-radius: 6px;
+            border: 1px solid #334155;
         }
 
         .stat-label {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #94a3b8;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .stat-value {
-            font-size: 1.8rem;
+            font-size: 1.45rem;
             font-weight: bold;
             color: var(--text-color);
+        }
+
+        .stat-sub {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        #clock-value {
+            color: var(--accent-color);
+            font-size: 1.25rem;
         }
 
         #co2-value {
@@ -73,14 +93,16 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            padding-top: 10px;
         }
 
         button {
             background-color: var(--accent-color);
             color: var(--bg-color);
             border: none;
-            padding: 15px;
+            padding: 13px;
             font-weight: bold;
+            font-size: 0.92rem;
             cursor: pointer;
             border-radius: 6px;
             transition: background-color 0.2s, transform 0.1s;
@@ -94,6 +116,24 @@
             transform: scale(0.98);
         }
 
+        button.pause {
+            background-color: var(--pause-color);
+            color: #0f172a;
+        }
+
+        button.pause:hover {
+            background-color: #d97706;
+        }
+
+        button.resume {
+            background-color: var(--ev-color);
+            color: #0f172a;
+        }
+
+        button.resume:hover {
+            background-color: #16a34a;
+        }
+
         button.alert {
             background-color: var(--alert-color);
             color: white;
@@ -104,11 +144,12 @@
         }
 
         #legend {
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             background: #0f172a;
-            padding: 10px;
+            padding: 10px 12px;
             border-radius: 6px;
-            margin-bottom: 20px;
+            margin-bottom: 14px;
+            border: 1px solid #334155;
         }
 
         .legend-item {
@@ -151,6 +192,23 @@
             font-weight: bold;
             display: none;
             animation: pulse 2s infinite;
+            z-index: 5;
+        }
+
+        #paused-badge {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(245, 158, 11, 0.95);
+            color: #0f172a;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            display: none;
+            z-index: 5;
         }
 
         @keyframes pulse {
@@ -164,7 +222,7 @@
 
     <div id="sidebar">
         <h1>Manthan Kriti 2026</h1>
-        <p style="font-size: 0.9rem; color: #94a3b8;">Knowledge Park Corridor Digital Twin</p>
+        <p style="font-size: 0.88rem; color: #94a3b8; margin-top: 4px; margin-bottom: 14px;">Knowledge Park Corridor Digital Twin</p>
 
         <div id="legend">
             <div class="legend-item"><div class="legend-color" style="background-color: var(--ev-color);"></div>Electric Vehicle (0g/km)</div>
@@ -173,28 +231,36 @@
         </div>
 
         <div class="stat-group">
-            <div class="stat-label">Active Vehicles</div>
-            <div class="stat-value" id="vehicle-count">0</div>
+            <div class="stat-label">Simulated Day Clock</div>
+            <div class="stat-value" id="clock-value">Day 1 — 08:00 AM</div>
+            <div class="stat-sub" id="time-period">Morning Rush Hour</div>
         </div>
 
         <div class="stat-group">
-            <div class="stat-label">Est. CO2 Emitted</div>
+            <div class="stat-label">Daily CO₂ Emitted</div>
             <div class="stat-value" id="co2-value">0.0 kg</div>
+            <div class="stat-sub" id="daily-rate">24h Projected: 0 kg/day</div>
         </div>
 
         <div class="stat-group">
-            <div class="stat-label">Avg Corridor Speed</div>
-            <div class="stat-value" id="speed-value">0 km/h</div>
+            <div class="stat-label">Active Vehicles / Avg Speed</div>
+            <div class="stat-value">
+                <span id="vehicle-count">0</span>
+                <span style="color: #64748b; font-size: 1.1rem;"> | </span>
+                <span id="speed-value" style="color: var(--ev-color);">0 km/h</span>
+            </div>
         </div>
 
         <div class="control-group">
-            <button onclick="togglePresetMode()">Toggle Preset Demo Mode</button>
+            <button class="pause" id="pause-btn" onclick="togglePause()">⏸ Stop Traffic</button>
+            <button id="preset-btn" onclick="togglePresetMode()">Density: Standard (15)</button>
             <button class="alert" id="incident-btn" onclick="triggerIncident()">Trigger Corridor Blockade</button>
         </div>
     </div>
 
     <main>
         <div id="notification">🚨 INCIDENT DETECTED: ROUTING VIA PERIPHERAL ROAD 🚨</div>
+        <div id="paused-badge">⏸ TRAFFIC PAUSED — INSPECTING CORRIDOR STATE</div>
         <canvas id="simCanvas" width="800" height="600"></canvas>
     </main>
 
@@ -203,30 +269,31 @@
         const ctx = canvas.getContext('2d');
 
         // --- Configuration & Constants ---
-        const GRID_SIZE = 10;
         const ROAD_WIDTH = 60;
         const VEHICLE_TYPES = ['EV', 'HYBRID', 'PETROL'];
-        const EMISSION_RATES = { 'EV': 0, 'HYBRID': 0.02, 'PETROL': 0.05 }; // arbitrary units per frame idling/moving
+        const EMISSION_RATES = { 'EV': 0, 'HYBRID': 0.02, 'PETROL': 0.05 };
         const SPEEDS = { 'EV': 2.5, 'HYBRID': 2.0, 'PETROL': 1.5 };
+        const SIM_MINUTES_PER_SECOND = 10; // 144 real seconds = 1 full 24h day
 
         let vehicles = [];
-        let totalEmissions = 0;
+        let totalEmissions = 0;       // Cumulative CO2 in kg for the current day
+        let rollingEmissionRate = 0;  // Instantaneous kg per simulated hour
         let incidentActive = false;
         let presetMode = true;
-        let spawnTimer = 0;
+        let isPaused = false;
+        let simMinutes = 8 * 60;      // Starts at Day 1, 08:00 AM
+        let lastFrameTime = performance.now();
 
         // --- Node & Graph Definition for Knowledge Park Corridor ---
-        // Represents intersections and main roads
         const nodes = [
-            { id: 0, x: 100, y: 300 }, // Entry Point / Metro Station
-            { id: 1, x: 300, y: 300 }, // Main Junction 1
-            { id: 2, x: 500, y: 300 }, // Main Junction 2
-            { id: 3, x: 700, y: 300 }, // Campus Exit
-            { id: 4, x: 300, y: 150 }, // Bypass North
-            { id: 5, x: 500, y: 450 }  // Bypass South
+            { id: 0, x: 100, y: 300, label: 'Metro Entry' },
+            { id: 1, x: 300, y: 300, label: 'Junction 1' },
+            { id: 2, x: 500, y: 300, label: 'Junction 2' },
+            { id: 3, x: 700, y: 300, label: 'Campus Exit' },
+            { id: 4, x: 400, y: 140, label: 'North Bypass' },
+            { id: 5, x: 400, y: 460, label: 'South Bypass' }
         ];
 
-        // Adjacency list for valid paths
         const graph = {
             0: [1],
             1: [0, 2, 4, 5],
@@ -240,16 +307,16 @@
         class Vehicle {
             constructor(type, path) {
                 this.type = type;
-                this.path = [...path]; // Copy path
+                this.path = [...path];
                 this.currentNodeIndex = 0;
-                
+
                 const startNode = nodes[this.path[0]];
                 this.x = startNode.x;
                 this.y = startNode.y;
-                
+
                 this.targetX = nodes[this.path[1]].x;
                 this.targetY = nodes[this.path[1]].y;
-                
+
                 this.speed = SPEEDS[type];
                 this.emissionRate = EMISSION_RATES[type];
                 this.isIdling = false;
@@ -257,21 +324,27 @@
                 this.size = 8;
             }
 
-            update() {
+            update(dt) {
+                // Convert emission rate into kg per simulated hour
+                const simHoursElapsed = (dt * SIM_MINUTES_PER_SECOND) / 60;
+                const multiplier = this.isIdling ? 2.0 : 1.0;
+                const stepCo2Kg = this.emissionRate * 1.8 * multiplier * simHoursElapsed;
+
+                totalEmissions += stepCo2Kg;
+                rollingEmissionRate += (this.emissionRate * 1.8 * multiplier);
+
                 if (this.isIdling) {
-                    totalEmissions += this.emissionRate * 2; // Higher penalty for idling
                     return;
                 }
 
                 const dx = this.targetX - this.x;
                 const dy = this.targetY - this.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
+                const moveStep = this.speed * (dt * 60);
 
-                if (distance < this.speed) {
-                    // Reached node, advance to next
+                if (distance < moveStep) {
                     this.currentNodeIndex++;
                     if (this.currentNodeIndex >= this.path.length - 1) {
-                        // Reached destination, recycle vehicle
                         this.resetToStart();
                     } else {
                         const nextNode = nodes[this.path[this.currentNodeIndex]];
@@ -279,10 +352,8 @@
                         this.targetY = nextNode.y;
                     }
                 } else {
-                    // Move towards target
-                    this.x += (dx / distance) * this.speed;
-                    this.y += (dy / distance) * this.speed;
-                    totalEmissions += this.emissionRate;
+                    this.x += (dx / distance) * moveStep;
+                    this.y += (dy / distance) * moveStep;
                 }
             }
 
@@ -292,7 +363,7 @@
                 ctx.fillStyle = this.isIdling ? '#94a3b8' : this.color;
                 ctx.fill();
                 ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 1;
+                ctx.lineWidth = 1.2;
                 ctx.stroke();
                 ctx.closePath();
             }
@@ -310,36 +381,28 @@
         }
 
         // --- Simulation Logic ---
-
         function generateRandomPath() {
-            let path = [0]; // Always start at Metro
+            let path = [0];
             let distinctNodes = [0];
             let current = 0;
 
-            while (current !== 3) { // Destination is Campus Exit (Node 3)
+            while (current !== 3) {
                 let neighbors = graph[current].filter(n => !distinctNodes.includes(n));
-                
-                // If trapped or biased, allow revisiting nodes to prevent dead ends
                 if (neighbors.length === 0) {
                     neighbors = graph[current];
                 }
 
-                // If incident is active, heavily discourage using central corridor directly
-                if (incidentActive) {
-                     if (current === 1 && neighbors.includes(2)) {
-                         neighbors = neighbors.filter(n => n !== 2);
-                     }
+                if (incidentActive && current === 1 && neighbors.includes(2)) {
+                    neighbors = neighbors.filter(n => n !== 2);
                 }
 
                 let next = neighbors[Math.floor(Math.random() * neighbors.length)];
-                
-                // Prevent infinite loops in rand pathing
-                if(path.length > 8) {
-                    next = 3; 
+                if (path.length > 8) {
+                    next = 3;
                 }
 
                 path.push(next);
-                if(!distinctNodes.includes(next)) distinctNodes.push(next);
+                if (!distinctNodes.includes(next)) distinctNodes.push(next);
                 current = next;
             }
             return path;
@@ -348,7 +411,12 @@
         function initSimulation() {
             vehicles = [];
             totalEmissions = 0;
+            simMinutes = 8 * 60; // Reset clock to 08:00 AM
             const initialCount = presetMode ? 15 : 30;
+            document.getElementById('preset-btn').innerText = presetMode
+                ? 'Density: Standard (15)'
+                : 'Density: Rush Hour (30)';
+
             for (let i = 0; i < initialCount; i++) {
                 const type = VEHICLE_TYPES[Math.floor(Math.random() * VEHICLE_TYPES.length)];
                 vehicles.push(new Vehicle(type, generateRandomPath()));
@@ -370,35 +438,43 @@
             // Bypass North (1 -> 4 -> 2)
             ctx.beginPath();
             ctx.moveTo(nodes[1].x, nodes[1].y);
-            ctx.quadraticCurveTo(400, 100, nodes[2].x, nodes[2].y);
+            ctx.lineTo(nodes[4].x, nodes[4].y);
+            ctx.lineTo(nodes[2].x, nodes[2].y);
             ctx.stroke();
 
             // Bypass South (1 -> 5 -> 2)
             ctx.beginPath();
             ctx.moveTo(nodes[1].x, nodes[1].y);
-            ctx.quadraticCurveTo(400, 500, nodes[2].x, nodes[2].y);
+            ctx.lineTo(nodes[5].x, nodes[5].y);
+            ctx.lineTo(nodes[2].x, nodes[2].y);
             ctx.stroke();
 
-            // Draw Road Surface (inner lane markings)
+            // Road Center Lane Markings
             ctx.strokeStyle = '#475569';
-            ctx.lineWidth = 4;
-            ctx.setLineDash([10, 15]);
-            
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 14]);
+
             ctx.beginPath();
             ctx.moveTo(nodes[0].x, nodes[0].y);
             ctx.lineTo(nodes[3].x, nodes[3].y);
             ctx.stroke();
-            ctx.setLineDash([]); // Reset
+            ctx.setLineDash([]);
 
-            // Draw Nodes/Intersections
+            // Draw Nodes & Labels
             nodes.forEach(node => {
                 ctx.beginPath();
-                ctx.arc(node.x, node.y, 20, 0, Math.PI * 2);
+                ctx.arc(node.x, node.y, 18, 0, Math.PI * 2);
                 ctx.fillStyle = '#1e293b';
                 ctx.fill();
                 ctx.strokeStyle = '#64748b';
                 ctx.lineWidth = 2;
                 ctx.stroke();
+
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '11px Segoe UI, sans-serif';
+                ctx.textAlign = 'center';
+                const labelOffsetY = node.id === 4 ? -28 : 34;
+                ctx.fillText(node.label, node.x, node.y + labelOffsetY);
             });
 
             // Highlight Blockade if active
@@ -413,9 +489,8 @@
         }
 
         function handleCollisions() {
-            // Simple proximity check to simulate braking/idling in congestion
             for (let i = 0; i < vehicles.length; i++) {
-                vehicles[i].isIdling = false; // Reset
+                vehicles[i].isIdling = false;
                 for (let j = i + 1; j < vehicles.length; j++) {
                     const dx = vehicles[i].x - vehicles[j].x;
                     const dy = vehicles[i].y - vehicles[j].y;
@@ -429,14 +504,57 @@
             }
         }
 
-        function updateUI() {
+        function getTimeOfDayLabel(hours24) {
+            if (hours24 >= 8 && hours24 < 11) return 'Morning Rush Hour';
+            if (hours24 >= 11 && hours24 < 17) return 'Midday Campus Flow';
+            if (hours24 >= 17 && hours24 < 21) return 'Evening Peak Traffic';
+            return 'Night Low-Density Flow';
+        }
+
+        function updateClockAndUI() {
+            // Format Simulated Day & 12-Hour Clock
+            const dayNumber = Math.floor(simMinutes / 1440) + 1;
+            const minsInDay = Math.floor(simMinutes % 1440);
+            const hours24 = Math.floor(minsInDay / 60);
+            const mins = minsInDay % 60;
+            const period = hours24 >= 12 ? 'PM' : 'AM';
+            const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+
+            document.getElementById('clock-value').innerText =
+                `Day ${dayNumber} — ${String(hours12).padStart(2, '0')}:${String(mins).padStart(2, '0')} ${period}`;
+            document.getElementById('time-period').innerText = getTimeOfDayLabel(hours24);
+
+            // Daily CO2 Emitted & 24h Projection
+            document.getElementById('co2-value').innerText = totalEmissions.toFixed(1) + ' kg';
+            const projected24h = rollingEmissionRate * 24;
+            document.getElementById('daily-rate').innerText =
+                `24h Projected: ${Math.round(projected24h)} kg/day`;
+
+            // Vehicle Count & Speed
             document.getElementById('vehicle-count').innerText = vehicles.length;
-            document.getElementById('co2-value').innerText = (totalEmissions * 0.1).toFixed(1) + ' kg';
-            
-            // Calculate avg speed based on idling
             const movingCount = vehicles.filter(v => !v.isIdling).length;
             const avgSpeed = vehicles.length > 0 ? (movingCount / vehicles.length) * 40 : 40;
             document.getElementById('speed-value').innerText = Math.round(avgSpeed) + ' km/h';
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            const btn = document.getElementById('pause-btn');
+            const badge = document.getElementById('paused-badge');
+
+            if (isPaused) {
+                btn.innerText = '▶ Resume Traffic';
+                btn.classList.remove('pause');
+                btn.classList.add('resume');
+                badge.style.display = 'block';
+            } else {
+                btn.innerText = '⏸ Stop Traffic';
+                btn.classList.remove('resume');
+                btn.classList.add('pause');
+                badge.style.display = 'none';
+                lastFrameTime = performance.now();
+                requestAnimationFrame(animate);
+            }
         }
 
         function triggerIncident() {
@@ -448,41 +566,58 @@
                 btn.innerText = "Clear Corridor Blockade";
                 btn.classList.remove('alert');
                 notification.style.display = 'block';
-                // Force recalculation of paths for all vehicles
                 vehicles.forEach(v => v.resetToStart());
             } else {
                 btn.innerText = "Trigger Corridor Blockade";
                 btn.classList.add('alert');
                 notification.style.display = 'none';
             }
+
+            // Redraw immediately even if paused so blockade state updates visually
+            if (isPaused) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawRoadNetwork();
+                vehicles.forEach(v => v.draw());
+            }
         }
 
         function togglePresetMode() {
             presetMode = !presetMode;
             initSimulation();
+            if (isPaused) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawRoadNetwork();
+                vehicles.forEach(v => v.draw());
+                updateClockAndUI();
+            }
         }
 
         // --- Main Game Loop ---
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        function animate(now) {
+            if (isPaused) return;
 
+            const dt = Math.min((now - lastFrameTime) / 1000, 0.1);
+            lastFrameTime = now;
+
+            simMinutes += dt * SIM_MINUTES_PER_SECOND;
+            rollingEmissionRate = 0;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawRoadNetwork();
             handleCollisions();
 
             vehicles.forEach(vehicle => {
-                vehicle.update();
+                vehicle.update(dt);
                 vehicle.draw();
             });
 
-            updateUI();
-
+            updateClockAndUI();
             requestAnimationFrame(animate);
         }
 
         // Initialize and Run
         initSimulation();
-        animate();
-
+        requestAnimationFrame(animate);
     </script>
 </body>
 </html>
