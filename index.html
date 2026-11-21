@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Park Traffic & Emissions Digital Twin</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --alert-color: #f43f5e;
+            --ev-color: #22c55e;
+            --petrol-color: #ef4444;
+            --hybrid-color: #eab308;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            width: 350px;
+            background-color: var(--panel-bg);
+            border-right: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            color: var(--accent-color);
+            margin-top: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 10px;
+        }
+
+        .stat-group {
+            margin-bottom: 20px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        #co2-value {
+            color: var(--petrol-color);
+        }
+
+        .control-group {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: #0ea5e9;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button.alert {
+            background-color: var(--alert-color);
+            color: white;
+        }
+
+        button.alert:hover {
+            background-color: #e11d48;
+        }
+
+        #legend {
+            font-size: 0.85rem;
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        main {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #090d16;
+        }
+
+        canvas {
+            background-color: #111827;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border-radius: 8px;
+        }
+
+        #notification {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--alert-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: none;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <h1>Manthan Kriti 2026</h1>
+        <p style="font-size: 0.9rem; color: #94a3b8;">Knowledge Park Corridor Digital Twin</p>
+
+        <div id="legend">
+            <div class="legend-item"><div class="legend-color" style="background-color: var(--ev-color);"></div>Electric Vehicle (0g/km)</div>
+            <div class="legend-item"><div class="legend-color" style="background-color: var(--hybrid-color);"></div>Hybrid (120g/km)</div>
+            <div class="legend-item"><div class="legend-color" style="background-color: var(--petrol-color);"></div>Petrol ICE (250g/km)</div>
+        </div>
+
+        <div class="stat-group">
+            <div class="stat-label">Active Vehicles</div>
+            <div class="stat-value" id="vehicle-count">0</div>
+        </div>
+
+        <div class="stat-group">
+            <div class="stat-label">Est. CO2 Emitted</div>
+            <div class="stat-value" id="co2-value">0.0 kg</div>
+        </div>
+
+        <div class="stat-group">
+            <div class="stat-label">Avg Corridor Speed</div>
+            <div class="stat-value" id="speed-value">0 km/h</div>
+        </div>
+
+        <div class="control-group">
+            <button onclick="togglePresetMode()">Toggle Preset Demo Mode</button>
+            <button class="alert" id="incident-btn" onclick="triggerIncident()">Trigger Corridor Blockade</button>
+        </div>
+    </div>
+
+    <main>
+        <div id="notification">🚨 INCIDENT DETECTED: ROUTING VIA PERIPHERAL ROAD 🚨</div>
+        <canvas id="simCanvas" width="800" height="600"></canvas>
+    </main>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- Configuration & Constants ---
+        const GRID_SIZE = 10;
+        const ROAD_WIDTH = 60;
+        const VEHICLE_TYPES = ['EV', 'HYBRID', 'PETROL'];
+        const EMISSION_RATES = { 'EV': 0, 'HYBRID': 0.02, 'PETROL': 0.05 }; // arbitrary units per frame idling/moving
+        const SPEEDS = { 'EV': 2.5, 'HYBRID': 2.0, 'PETROL': 1.5 };
+
+        let vehicles = [];
+        let totalEmissions = 0;
+        let incidentActive = false;
+        let presetMode = true;
+        let spawnTimer = 0;
+
+        // --- Node & Graph Definition for Knowledge Park Corridor ---
+        // Represents intersections and main roads
+        const nodes = [
+            { id: 0, x: 100, y: 300 }, // Entry Point / Metro Station
+            { id: 1, x: 300, y: 300 }, // Main Junction 1
+            { id: 2, x: 500, y: 300 }, // Main Junction 2
+            { id: 3, x: 700, y: 300 }, // Campus Exit
+            { id: 4, x: 300, y: 150 }, // Bypass North
+            { id: 5, x: 500, y: 450 }  // Bypass South
+        ];
+
+        // Adjacency list for valid paths
+        const graph = {
+            0: [1],
+            1: [0, 2, 4, 5],
+            2: [1, 3, 4, 5],
+            3: [2],
+            4: [1, 2],
+            5: [1, 2]
+        };
+
+        // --- Vehicle Class ---
+        class Vehicle {
+            constructor(type, path) {
+                this.type = type;
+                this.path = [...path]; // Copy path
+                this.currentNodeIndex = 0;
+                
+                const startNode = nodes[this.path[0]];
+                this.x = startNode.x;
+                this.y = startNode.y;
+                
+                this.targetX = nodes[this.path[1]].x;
+                this.targetY = nodes[this.path[1]].y;
+                
+                this.speed = SPEEDS[type];
+                this.emissionRate = EMISSION_RATES[type];
+                this.isIdling = false;
+                this.color = type === 'EV' ? '#22c55e' : (type === 'HYBRID' ? '#eab308' : '#ef4444');
+                this.size = 8;
+            }
+
+            update() {
+                if (this.isIdling) {
+                    totalEmissions += this.emissionRate * 2; // Higher penalty for idling
+                    return;
+                }
+
+                const dx = this.targetX - this.x;
+                const dy = this.targetY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < this.speed) {
+                    // Reached node, advance to next
+                    this.currentNodeIndex++;
+                    if (this.currentNodeIndex >= this.path.length - 1) {
+                        // Reached destination, recycle vehicle
+                        this.resetToStart();
+                    } else {
+                        const nextNode = nodes[this.path[this.currentNodeIndex]];
+                        this.targetX = nextNode.x;
+                        this.targetY = nextNode.y;
+                    }
+                } else {
+                    // Move towards target
+                    this.x += (dx / distance) * this.speed;
+                    this.y += (dy / distance) * this.speed;
+                    totalEmissions += this.emissionRate;
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.isIdling ? '#94a3b8' : this.color;
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.closePath();
+            }
+
+            resetToStart() {
+                this.path = generateRandomPath();
+                this.currentNodeIndex = 0;
+                const startNode = nodes[this.path[0]];
+                this.x = startNode.x;
+                this.y = startNode.y;
+                const nextNode = nodes[this.path[1]];
+                this.targetX = nextNode.x;
+                this.targetY = nextNode.y;
+            }
+        }
+
+        // --- Simulation Logic ---
+
+        function generateRandomPath() {
+            let path = [0]; // Always start at Metro
+            let distinctNodes = [0];
+            let current = 0;
+
+            while (current !== 3) { // Destination is Campus Exit (Node 3)
+                let neighbors = graph[current].filter(n => !distinctNodes.includes(n));
+                
+                // If trapped or biased, allow revisiting nodes to prevent dead ends
+                if (neighbors.length === 0) {
+                    neighbors = graph[current];
+                }
+
+                // If incident is active, heavily discourage using central corridor directly
+                if (incidentActive) {
+                     if (current === 1 && neighbors.includes(2)) {
+                         neighbors = neighbors.filter(n => n !== 2);
+                     }
+                }
+
+                let next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                
+                // Prevent infinite loops in rand pathing
+                if(path.length > 8) {
+                    next = 3; 
+                }
+
+                path.push(next);
+                if(!distinctNodes.includes(next)) distinctNodes.push(next);
+                current = next;
+            }
+            return path;
+        }
+
+        function initSimulation() {
+            vehicles = [];
+            totalEmissions = 0;
+            const initialCount = presetMode ? 15 : 30;
+            for (let i = 0; i < initialCount; i++) {
+                const type = VEHICLE_TYPES[Math.floor(Math.random() * VEHICLE_TYPES.length)];
+                vehicles.push(new Vehicle(type, generateRandomPath()));
+            }
+        }
+
+        function drawRoadNetwork() {
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = ROAD_WIDTH;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Main Corridor (0 -> 1 -> 2 -> 3)
+            ctx.beginPath();
+            ctx.moveTo(nodes[0].x, nodes[0].y);
+            ctx.lineTo(nodes[3].x, nodes[3].y);
+            ctx.stroke();
+
+            // Bypass North (1 -> 4 -> 2)
+            ctx.beginPath();
+            ctx.moveTo(nodes[1].x, nodes[1].y);
+            ctx.quadraticCurveTo(400, 100, nodes[2].x, nodes[2].y);
+            ctx.stroke();
+
+            // Bypass South (1 -> 5 -> 2)
+            ctx.beginPath();
+            ctx.moveTo(nodes[1].x, nodes[1].y);
+            ctx.quadraticCurveTo(400, 500, nodes[2].x, nodes[2].y);
+            ctx.stroke();
+
+            // Draw Road Surface (inner lane markings)
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([10, 15]);
+            
+            ctx.beginPath();
+            ctx.moveTo(nodes[0].x, nodes[0].y);
+            ctx.lineTo(nodes[3].x, nodes[3].y);
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset
+
+            // Draw Nodes/Intersections
+            nodes.forEach(node => {
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 20, 0, Math.PI * 2);
+                ctx.fillStyle = '#1e293b';
+                ctx.fill();
+                ctx.strokeStyle = '#64748b';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+
+            // Highlight Blockade if active
+            if (incidentActive) {
+                ctx.strokeStyle = '#f43f5e';
+                ctx.lineWidth = 10;
+                ctx.beginPath();
+                ctx.moveTo(400, 270);
+                ctx.lineTo(400, 330);
+                ctx.stroke();
+            }
+        }
+
+        function handleCollisions() {
+            // Simple proximity check to simulate braking/idling in congestion
+            for (let i = 0; i < vehicles.length; i++) {
+                vehicles[i].isIdling = false; // Reset
+                for (let j = i + 1; j < vehicles.length; j++) {
+                    const dx = vehicles[i].x - vehicles[j].x;
+                    const dy = vehicles[i].y - vehicles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 25) {
+                        vehicles[i].isIdling = true;
+                        vehicles[j].isIdling = true;
+                    }
+                }
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('vehicle-count').innerText = vehicles.length;
+            document.getElementById('co2-value').innerText = (totalEmissions * 0.1).toFixed(1) + ' kg';
+            
+            // Calculate avg speed based on idling
+            const movingCount = vehicles.filter(v => !v.isIdling).length;
+            const avgSpeed = vehicles.length > 0 ? (movingCount / vehicles.length) * 40 : 40;
+            document.getElementById('speed-value').innerText = Math.round(avgSpeed) + ' km/h';
+        }
+
+        function triggerIncident() {
+            incidentActive = !incidentActive;
+            const btn = document.getElementById('incident-btn');
+            const notification = document.getElementById('notification');
+
+            if (incidentActive) {
+                btn.innerText = "Clear Corridor Blockade";
+                btn.classList.remove('alert');
+                notification.style.display = 'block';
+                // Force recalculation of paths for all vehicles
+                vehicles.forEach(v => v.resetToStart());
+            } else {
+                btn.innerText = "Trigger Corridor Blockade";
+                btn.classList.add('alert');
+                notification.style.display = 'none';
+            }
+        }
+
+        function togglePresetMode() {
+            presetMode = !presetMode;
+            initSimulation();
+        }
+
+        // --- Main Game Loop ---
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawRoadNetwork();
+            handleCollisions();
+
+            vehicles.forEach(vehicle => {
+                vehicle.update();
+                vehicle.draw();
+            });
+
+            updateUI();
+
+            requestAnimationFrame(animate);
+        }
+
+        // Initialize and Run
+        initSimulation();
+        animate();
+
+    </script>
+</body>
+</html>
