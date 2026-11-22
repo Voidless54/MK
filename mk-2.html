@@ -1,0 +1,2433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoFlow Twin · Knowledge Park Geo-referenced Network & Emissions Digital Twin</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --alert-color: #f43f5e;
+            --pause-color: #f59e0b;
+            --ev-color: #22c55e;
+            --hybrid-color: #eab308;
+            --petrol-color: #ef4444;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            width: 350px;
+            flex-shrink: 0;
+            background-color: var(--panel-bg);
+            border-right: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            padding: 12px 14px;
+            box-sizing: border-box;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.04rem;
+            color: var(--accent-color);
+            margin-top: 0;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 6px;
+        }
+
+        .stat-group {
+            margin-bottom: 6px;
+            background: rgba(15, 23, 42, 0.45);
+            padding: 6px 9px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+        }
+
+        .stat-label {
+            font-size: 0.69rem;
+            color: #94a3b8;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 1.12rem;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .stat-sub {
+            font-size: 0.71rem;
+            color: #94a3b8;
+            margin-top: 2px;
+            line-height: 1.3;
+        }
+
+        #clock-value {
+            color: var(--accent-color);
+            font-size: 1.02rem;
+        }
+
+        #co2-value {
+            color: var(--petrol-color);
+        }
+
+        .tool-box {
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 7px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-row button {
+            flex: 1;
+            padding: 7px 5px;
+            font-size: 0.75rem;
+        }
+
+        select {
+            width: 100%;
+            background-color: #0f172a;
+            color: var(--text-color);
+            border: 1px solid #475569;
+            padding: 6px 8px;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            font-family: inherit;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select:focus {
+            border-color: var(--accent-color);
+        }
+
+        .control-group {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding-top: 4px;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 7px 9px;
+            font-weight: bold;
+            font-size: 0.78rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: #0ea5e9;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button.pause {
+            background-color: var(--pause-color);
+            color: #0f172a;
+        }
+
+        button.pause:hover {
+            background-color: #d97706;
+        }
+
+        button.resume {
+            background-color: var(--ev-color);
+            color: #0f172a;
+        }
+
+        button.resume:hover {
+            background-color: #16a34a;
+        }
+
+        button.policy-active {
+            background-color: #8b5cf6;
+            color: white;
+        }
+
+        button.policy-active:hover {
+            background-color: #7c3aed;
+        }
+
+        button.adaptive-active {
+            background-color: #10b981;
+            color: #0f172a;
+        }
+
+        button.adaptive-active:hover {
+            background-color: #059669;
+        }
+
+        button.alert {
+            background-color: var(--alert-color);
+            color: white;
+        }
+
+        button.alert:hover {
+            background-color: #e11d48;
+        }
+
+        button.secondary {
+            background-color: #334155;
+            color: #f8fafc;
+        }
+
+        button.secondary:hover {
+            background-color: #475569;
+        }
+
+        #legend {
+            font-size: 0.71rem;
+            background: #0f172a;
+            padding: 6px 9px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            border: 1px solid #334155;
+            line-height: 1.35;
+        }
+
+        .legend-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 2px 0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-dot {
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        main {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            background-color: #090d16;
+            padding: 12px;
+            box-sizing: border-box;
+            overflow: auto;
+        }
+
+        canvas {
+            width: 1900px;
+            height: 1050px;
+            background-color: #111827;
+            box-shadow: 0 0 26px rgba(0,0,0,0.65);
+            border-radius: 8px;
+            cursor: crosshair;
+            flex-shrink: 0;
+        }
+
+        #notification {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--alert-color);
+            color: white;
+            padding: 7px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.78rem;
+            display: none;
+            animation: pulse 2s infinite;
+            z-index: 5;
+            max-width: 78%;
+            text-align: center;
+        }
+
+        #paused-badge {
+            position: absolute;
+            bottom: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(245, 158, 11, 0.95);
+            color: #0f172a;
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.78rem;
+            letter-spacing: 0.5px;
+            display: none;
+            z-index: 5;
+        }
+
+        #canvas-hint {
+            position: absolute;
+            top: 18px;
+            right: 22px;
+            font-size: 0.72rem;
+            color: #cbd5e1;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid #334155;
+            padding: 5px 10px;
+            border-radius: 6px;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        @media (max-width: 760px) {
+            body { height: auto; min-height: 100vh; overflow: auto; flex-direction: column; }
+            #sidebar { width: 100%; max-height: none; border-right: 0; border-bottom: 1px solid #334155; }
+            .control-group { margin-top: 8px; }
+            main { min-height: 55vh; padding: 8px; }
+        }
+    </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+<style>main{padding:0!important;overflow:hidden!important}#simCanvas{display:none!important}#map3d{position:absolute;inset:0;z-index:0}
+#notification,#canvas-hint,#paused-badge{z-index:5!important}
+.kp-lbl{padding:1px 6px;border-radius:5px;background:rgba(255,255,255,.92);color:#0f172a;font:600 11px "Segoe UI",sans-serif;white-space:nowrap;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.35)}</style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <h1>Manthan Kriti 2026</h1>
+        <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px; margin-bottom: 6px;">Interactive Traffic, Road-Builder & Emissions Twin</p>
+
+        <div id="legend">
+            <div class="legend-row">
+                <div class="legend-item"><div class="legend-dot" style="width:9px;height:9px;background:var(--ev-color);"></div><span>EV (0g/km)</span></div>
+                <div class="legend-item"><div class="legend-dot" style="width:9px;height:9px;background:var(--hybrid-color);"></div><span>Hybrid</span></div>
+                <div class="legend-item"><div class="legend-dot" style="width:9px;height:9px;background:var(--petrol-color);"></div><span>Petrol/ICE</span></div>
+            </div>
+            <div class="legend-row" style="border-top: 1px solid #1e293b; padding-top: 3px;">
+                <div class="legend-item"><div class="legend-dot" style="width:7px;height:7px;background:#cbd5e1;"></div><span>Light (1.2T)</span></div>
+                <div class="legend-item"><div class="legend-dot" style="width:10px;height:10px;background:#cbd5e1;"></div><span>Med (1.8T)</span></div>
+                <div class="legend-item"><div class="legend-dot" style="width:14px;height:14px;background:#cbd5e1;"></div><span>Heavy (12T)</span></div>
+            </div>
+            <div class="legend-row" style="border-top: 1px solid #1e293b; padding-top: 3px;">
+                <div class="legend-item"><div class="legend-dot" style="width:9px;height:9px;background:#1e293b;border:2px solid #38bdf8;"></div><span>Public (Cyan Ring)</span></div>
+                <div class="legend-item"><div class="legend-dot" style="width:9px;height:9px;background:#1e293b;border:1.5px solid #ffffff;"></div><span>Private</span></div>
+            </div>
+            <div class="legend-row" style="border-top: 1px solid #1e293b; padding-top: 3px;">
+                <div class="legend-item"><div class="legend-dot" style="width:8px;height:8px;background:#a78bfa;"></div><span>College</span></div>
+                <div class="legend-item"><div class="legend-dot" style="width:8px;height:8px;background:#fb7185;"></div><span>Hospital</span></div>
+                <div class="legend-item"><div class="legend-dot" style="width:8px;height:8px;background:#fbbf24;"></div><span>Mall</span></div>
+            </div>
+            <div class="legend-row" style="border-top: 1px solid #1e293b; padding-top: 3px;">
+                <div class="legend-item"><div class="legend-dot" style="width:9px;height:9px;background:#ef4444;border:2px solid #ffffff;"></div><span>Ambulance (priority)</span></div>
+                <div class="legend-item"><div class="legend-dot" style="width:8px;height:8px;background:#fbbf24;"></div><span>Yielding</span></div>
+            </div>
+            <div class="legend-row" style="border-top: 1px solid #1e293b; padding-top: 3px;">
+                <div class="legend-item"><div style="width:18px;border-top:2px dashed #c084fc;"></div><span>Off-road attraction access</span></div>
+            </div>
+        </div>
+
+        <div class="stat-group">
+            <div class="stat-label">Simulated Day Clock</div>
+            <div class="stat-value" id="clock-value">Day 1 — 08:00 AM</div>
+            <div class="stat-sub" id="time-period">Morning Rush Hour (2-Way Surge)</div>
+        </div>
+
+        <div class="stat-group">
+            <div class="stat-label">Daily CO₂ Emitted</div>
+            <div class="stat-value" id="co2-value">0.0 kg</div>
+            <div class="stat-sub" id="daily-rate">24h Projected: 0 kg/day</div>
+        </div>
+
+        <div class="stat-group">
+            <div class="stat-label">Corridor Load, Speed & Fleet Split</div>
+            <div class="stat-value">
+                <span id="total-tonnage">0.0 T</span>
+                <span style="color: #64748b; font-size: 0.9rem;"> | </span>
+                <span id="speed-value" style="color: var(--ev-color);">0 km/h</span>
+            </div>
+            <div class="stat-sub" id="fuel-breakdown">EV: 0 • Hybrid: 0 • Petrol: 0</div>
+            <div class="stat-sub" id="sector-breakdown">Public: 0 (0 pax) • Private: 0</div>
+        </div>
+
+        <div class="stat-group">
+            <div class="stat-label">Live Traffic & Passenger Load</div>
+            <div class="stat-value" id="vehicle-count">Vehicles: 30</div>
+            <div class="stat-sub" id="passenger-count">Passengers: 0</div>
+            <div class="stat-sub" id="delay-value">Delayed: 0 vehicles • 0 vehicle-min</div>
+        </div>
+
+        <div class="stat-group">
+            <div class="stat-label">Attractions & Emergency Service</div>
+            <div class="stat-sub" id="destination-counts">College: 0 • Hospital: 0 • Mall: 0</div>
+            <div class="stat-sub" id="ambulance-status">Ambulance: routing to hospital</div>
+        </div>
+
+        <div class="stat-group">
+            <div class="stat-label">Live Traffic Incidents</div>
+            <div class="stat-sub" id="incident-count">Active incidents: 0</div>
+            <div class="stat-sub" id="incident-details">No active incidents</div>
+            <div class="stat-sub" id="incident-handled">Incidents recovered: 0</div>
+        </div>
+
+        <div class="control-group">
+            <button class="pause" id="pause-btn" onclick="togglePause()">⏸ Stop Traffic</button>
+            <button id="signal-btn" onclick="toggleAdaptiveSignals()">🚦 Signals: Fixed Timer</button>
+            <button id="transit-btn" onclick="togglePublicTransitBoost()">🚌 Public Transit: Standard</button>
+            <button id="heavy-btn" onclick="toggleHeavyBan()">🚛 Heavy Petrol/Diesel: Allowed</button>
+            <button id="preset-btn" onclick="togglePresetMode()">Density: Standard (30)</button>
+
+            <div class="tool-box">
+                <div class="stat-label" style="margin-bottom: 0;">Ban a Vehicle Type</div>
+                <select id="vehicle-ban-select" onchange="updateVehicleBanControls()" aria-label="Choose a vehicle type to ban">
+                    <option value="SECTOR:PRIVATE">Private vehicles</option>
+                    <option value="SECTOR:PUBLIC">Public transport</option>
+                    <option value="WEIGHT:LIGHT">Light vehicles</option>
+                    <option value="WEIGHT:MEDIUM">Medium vehicles</option>
+                    <option value="WEIGHT:HEAVY">Heavy vehicles</option>
+                    <option value="FUEL:PETROL">Petrol / ICE vehicles</option>
+                    <option value="FUEL:HYBRID">Hybrid vehicles</option>
+                    <option value="FUEL:EV">Electric vehicles</option>
+                </select>
+                <div class="btn-row">
+                    <button class="alert" id="vehicle-ban-btn" onclick="toggleVehicleTypeBan()">🚫 Ban Selected Type</button>
+                    <button class="secondary" id="clear-bans-btn" onclick="clearVehicleTypeBans()">Clear Bans</button>
+                </div>
+                <div class="stat-sub" id="active-bans">Active bans: None</div>
+                <div class="stat-sub" id="ban-impact">A ban removes matching vehicles and shows how many passengers they carried.</div>
+            </div>
+
+            <div class="tool-box">
+                <div class="stat-label" style="margin-bottom: 0;">Map Interaction Mode</div>
+                <button id="map-mode-btn" onclick="toggleMapMode()">🚧 Mode: Block / Unblock Roads</button>
+                <div class="btn-row">
+                    <button class="secondary" id="undo-road-btn" onclick="undoLastCustomRoad()">↩ Undo Road (0)</button>
+                    <button class="secondary" id="reset-network-btn" onclick="resetCustomNetwork()">Reset Map</button>
+                </div>
+            </div>
+
+            <div class="tool-box">
+                <div class="stat-label" style="margin-bottom: 0;">Multi-Road Blockades (<span id="blockade-count">0</span> Active)</div>
+                <select id="blockade-select" onchange="updateBlockadeButtonLabel()"></select>
+                <div class="btn-row">
+                    <button class="alert" id="incident-btn" onclick="toggleSelectedRoadBlockade()">🚧 Block Road</button>
+                    <button class="secondary" id="clear-all-btn" onclick="clearAllBlockades()">Clear All (0)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <div id="notification">🚨 ROAD BLOCKED — REROUTING TRAFFIC 🚨</div>
+        <div id="canvas-hint">Real 3D map — drag to pan, right-drag to tilt • Click a road to block or unblock</div>
+        <div id="paused-badge">⏸ TRAFFIC PAUSED — INSPECTING CORRIDOR</div>
+        <canvas id="simCanvas" width="1900" height="1050"></canvas>
+        <div id="map3d"></div>
+    </main>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- Wider & Longer 2-Lane Road Constants ---
+        const ROAD_WIDTH = 74;
+        const LANE_OFFSET = 19;
+        const NODE_RADIUS = 30;
+        const SIM_MINUTES_PER_SECOND = 10; // 144 real seconds = 1 full 24h day
+
+        const FUEL_TYPES = {
+            EV:     { label: 'EV',     color: '#22c55e', emissionFactor: 0.0 },
+            HYBRID: { label: 'Hybrid', color: '#eab308', emissionFactor: 0.45 },
+            PETROL: { label: 'Petrol', color: '#ef4444', emissionFactor: 1.0 }
+        };
+
+        const WEIGHT_CLASSES = {
+            LIGHT:  { label: 'Light',  weightTons: 1.2,  speed: 2.75, size: 6.5,  spacing: 23, baseEmission: 0.032 },
+            MEDIUM: { label: 'Medium', weightTons: 1.8,  speed: 2.25, size: 8.8,  spacing: 28, baseEmission: 0.055 },
+            HEAVY:  { label: 'Heavy',  weightTons: 12.0, speed: 1.50, size: 12.5, spacing: 36, baseEmission: 0.145 }
+        };
+
+        const SECTOR_TYPES = {
+            PUBLIC:  { label: 'Public',  ringColor: '#38bdf8', ringWidth: 2.6 },
+            PRIVATE: { label: 'Private', ringColor: '#ffffff', ringWidth: 1.3 }
+        };
+
+        const VEHICLE_CAPACITY = {
+            PUBLIC:  { LIGHT: 8, MEDIUM: 20, HEAVY: 50 },
+            PRIVATE: { LIGHT: 4, MEDIUM: 5, HEAVY: 7 }
+        };
+
+        const VEHICLE_BAN_LABELS = {
+            'SECTOR:PRIVATE': 'Private vehicles',
+            'SECTOR:PUBLIC': 'Public transport',
+            'WEIGHT:LIGHT': 'Light vehicles',
+            'WEIGHT:MEDIUM': 'Medium vehicles',
+            'WEIGHT:HEAVY': 'Heavy vehicles',
+            'FUEL:PETROL': 'Petrol / ICE vehicles',
+            'FUEL:HYBRID': 'Hybrid vehicles',
+            'FUEL:EV': 'Electric vehicles'
+        };
+
+        let activeVehicleBans = new Set();
+        let lastBanImpact = 'A ban removes matching vehicles and shows how many passengers they carried.';
+
+        function profileMatchesVehicleBan(profile, ruleKey) {
+            const [category, value] = ruleKey.split(':');
+            if (category === 'SECTOR') return profile.sectorKey === value;
+            if (category === 'WEIGHT') return profile.weightKey === value;
+            if (category === 'FUEL') return profile.fuelKey === value;
+            return false;
+        }
+
+        function isVehicleBanned(vehicleOrProfile) {
+            if (vehicleOrProfile.isAmbulance) return false;
+            if (restrictHeavyPetrol && vehicleOrProfile.weightKey === 'HEAVY' && vehicleOrProfile.fuelKey === 'PETROL') return true;
+            return [...activeVehicleBans].some(ruleKey => profileMatchesVehicleBan(vehicleOrProfile, ruleKey));
+        }
+
+        function removeBannedVehicles(reason) {
+            const previousCount = vehicles.length;
+            const previousPassengers = vehicles.reduce((sum, vehicle) => sum + (vehicle.passengers || 0), 0);
+            vehicles = vehicles.filter(vehicle => !isVehicleBanned(vehicle));
+            const removedCount = previousCount - vehicles.length;
+            const remainingPassengers = vehicles.reduce((sum, vehicle) => sum + (vehicle.passengers || 0), 0);
+            const removedPassengers = previousPassengers - remainingPassengers;
+            lastBanImpact = removedCount
+                ? `${reason}: removed ${removedCount} vehicles carrying ${removedPassengers} passengers.`
+                : `${reason}: no current vehicles matched; new matching arrivals are blocked.`;
+        }
+
+        function updateVehicleBanControls() {
+            const selectedRule = document.getElementById('vehicle-ban-select').value;
+            const button = document.getElementById('vehicle-ban-btn');
+            const isActive = activeVehicleBans.has(selectedRule);
+            button.innerText = isActive ? '✅ Allow Selected Type' : '🚫 Ban Selected Type';
+            button.classList.toggle('alert', !isActive);
+            button.classList.toggle('resume', isActive);
+
+            const labels = [...activeVehicleBans].map(ruleKey => VEHICLE_BAN_LABELS[ruleKey]);
+            if (restrictHeavyPetrol) labels.push('Heavy petrol / ICE');
+            document.getElementById('active-bans').innerText = `Active bans: ${labels.length ? labels.join(' • ') : 'None'}`;
+            document.getElementById('ban-impact').innerText = lastBanImpact;
+        }
+
+        function toggleVehicleTypeBan() {
+            const ruleKey = document.getElementById('vehicle-ban-select').value;
+            if (!VEHICLE_BAN_LABELS[ruleKey]) return;
+            if (activeVehicleBans.has(ruleKey)) {
+                activeVehicleBans.delete(ruleKey);
+                lastBanImpact = `${VEHICLE_BAN_LABELS[ruleKey]} ban lifted; future arrivals may include this type.`;
+            } else {
+                activeVehicleBans.add(ruleKey);
+                removeBannedVehicles(VEHICLE_BAN_LABELS[ruleKey]);
+            }
+            updateVehicleBanControls();
+            updateClockAndUI();
+            if (isPaused) redrawStaticFrame();
+        }
+
+        function clearVehicleTypeBans() {
+            activeVehicleBans.clear();
+            restrictHeavyPetrol = false;
+            document.getElementById('heavy-btn').innerText = '🚛 Heavy Petrol/Diesel: Allowed';
+            document.getElementById('heavy-btn').classList.remove('policy-active');
+            lastBanImpact = 'All bans lifted; future arrivals may include every vehicle type.';
+            updateVehicleBanControls();
+            updateClockAndUI();
+            if (isPaused) redrawStaticFrame();
+        }
+
+        function getPassengerCount(weightKey, sectorKey) {
+            const capacity = VEHICLE_CAPACITY[sectorKey][weightKey];
+            const hour = Math.floor((simMinutes % 1440) / 60);
+            const peak = (hour >= 7 && hour < 11) || (hour >= 16 && hour < 20);
+            const daytime = hour >= 6 && hour < 22;
+            const occupancy = sectorKey === 'PUBLIC'
+                ? (peak ? 0.76 : daytime ? 0.48 : 0.22)
+                : (peak ? 0.46 : daytime ? 0.31 : 0.20);
+            const variation = 0.84 + Math.random() * 0.32;
+            return Math.max(1, Math.min(capacity, Math.round(capacity * occupancy * variation)));
+        }
+
+        let vehicles = [];
+        let totalEmissions = 0;
+        let rollingEmissionRate = 0;
+        let totalDelayMinutes = 0;
+        let totalIncidentsHandled = 0;
+        let nextIncidentAt = 8 * 60 + 45;
+        let trafficGrowthMinutes = 0;
+        let activeIncidents = new Map();
+        let completedAttractionTrips = { college: 0, hospital: 0, mall: 0 };
+        let blockedEdges = new Set();
+        let presetMode = true;
+        let restrictHeavyPetrol = false;
+        let boostPublicTransit = false;
+        let adaptiveSignals = false;
+        let isPaused = false;
+        let simMinutes = 8 * 60; // Day 1, 08:00 AM
+        let lastFrameTime = performance.now();
+
+        // --- Interactive Road Builder State ---
+        let mapMode = 'BLOCK'; // 'BLOCK' or 'BUILD'
+        let buildStartPoint = null; // { nodeId, x, y, isNewNode }
+        let hoverPoint = null;      // { x, y, snapNodeId }
+        let customHistory = [];     // Stack of { edge: [a, b], createdNodes: [id...] }
+        let customNodeCounter = 1;
+
+        // ===== GEO-REFERENCED NETWORK (EcoFlow Twin v2) =====
+        // Seeds are digitised from the Google-Maps screenshots (pixel frame of the KP-II/Pari Chowk view, ~2.3 m/px) and tied to
+        // a lng/lat anchor. At runtime the geo layer re-fits them against OSM metro stations, resolves landmark positions by
+        // name, snaps junctions onto real OSM vertices and re-projects the 2D simulation canvas from the result.
+        const KX = 97830, KY = 110950;                                   // metres per degree lng / lat at ~28.46°N
+        const GEO_ORIGIN = { lng: 77.5027, lat: 28.4650, px: 1345, py: 497, m: 2.3 }; // Pari Chowk metro stn (seed anchor)
+        // [key, label, type ('j' junction | college | hospital | mall), px, py, signalised, OSM name regex, demand weight]
+        const SEED = [
+            ['kp2m','KP-II Metro Stn','j',1076,742,0],['pari','Pari Chowk','j',1442,404,1],['alpha','Alpha-1 Jn','j',1358,303,1],
+            ['kailash','Kailash Hospital Jn','j',1290,225,1],['north','KP-III / DTC Gate','j',330,30,0],
+            ['expo','India Expo Mart Jn','j',1050,650,1],['kp2rb','KP-II Roundabout','j',990,440,1],['ieml','IEML Expo Jn','j',1095,560,1],
+            ['tugal','Tugalpur Link Jn','j',1230,480,0],['kcc','Vashishth Rd / KCC Jn','j',870,250,0],
+            ['sfsapj','Sardar Fateh Singh / APJ Jn','j',665,110,1],['amityjn','IILM Rd / Amity Rd Jn','j',760,575,0],
+            ['ruhal','Ruhallapur Jn','j',330,300,0],['beta','Beta-1 Jn','j',1180,-10,1],['amrit','Amritpuram Chowk','j',1100,-95,1],
+            ['ishan','Ishan Chowk','j',1020,-150,0],['sfsvash','SFS / Vashishth Jn','j',820,-100,0],
+            ['dtc','Delhi Technical Campus','college',208,29,0,'Delhi Technical Campus',1.3],
+            ['iilm','IILM University','college',755,605,0,'IILM',.8],
+            ['amity','Amity University','college',545,411,0,'Amity University',1.2],
+            ['glb','GL Bajaj Institute','college',697,137,0,'GL Bajaj',.8],
+            ['sharda','Sharda University Hospital','hospital',362,139,0,'Sharda.*(Hospital|Medical)',1],
+            ['khosp','Kailash Hospital','hospital',1244,195,0,'Kailash',1.2],
+            ['betaplaza','Beta Plaza','mall',1235,-205,0,'Beta Plaza',1.2],
+            ['omaxe','Omaxe NRI City Mall','mall',1428,587,0,'Omaxe|NRI City',.8],
+            ['iemlhub','India Expo Centre (IEML)','mall',1084,609,0,'India Expo|IEML',1]
+        ];
+        const SEED_ID = Object.fromEntries(SEED.map((s, i) => [s[0], i]));
+        const seedLL = (px, py) => [GEO_ORIGIN.lng + (px - GEO_ORIGIN.px) * GEO_ORIGIN.m / KX, GEO_ORIGIN.lat - (py - GEO_ORIGIN.py) * GEO_ORIGIN.m / KY];
+        const BASE_NODES = SEED.map(([key, label, t, px, py, sig, rx, w], i) => {
+            const [lng, lat] = seedLL(px, py);
+            return { id: i, key, label, lng, lat, x: 0, y: 0, labelPos: i % 2 ? 'top' : 'bottom', hasSignal: !!sig,
+                ...(t !== 'j' ? { isAttraction: true, attractionType: t, osm: rx, w } : {}) };
+        });
+        // Uniform projection lng/lat -> 2D sim canvas (so canvas geometry = real relative geometry).
+        function projectCanvas(arr) {
+            const P = arr.map(n => [(n.lng - GEO_ORIGIN.lng) * KX, (n.lat - GEO_ORIGIN.lat) * KY]);
+            const xs = P.map(p => p[0]), ys = P.map(p => p[1]);
+            const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+            const s = 0.8; // px per metre (fixed so short OSM edges keep sane vehicle spacing)
+            arr.forEach((n, i) => { n.x = Math.round(100 + (P[i][0] - x0) * s); n.y = Math.round(100 + (y1 - P[i][1]) * s); });
+        }
+        projectCanvas(BASE_NODES);
+        const K = k => SEED_ID[k];
+        const ENTRY = [0, 4];   // gateway nodes where trips start/end (extended to the map boundary once OSM roads load)
+        const pickGate = ex => { const L = ENTRY.filter(i => i !== ex); return L[Math.floor(Math.random() * L.length)]; };
+        const BASE_EDGES = [
+            // APJ Abdul Kalam Rd / India Expo Mart Rd spine (KP-II metro -> KP-III / DTC)
+            ['kp2m','expo'],['expo','kp2rb'],['kp2rb','sfsapj'],['sfsapj','north'],
+            // Vashishth Rd and Sardar Fateh Singh Rd
+            ['kp2rb','kcc'],['kcc','sfsvash'],['sfsapj','sfsvash'],['sfsvash','ishan'],
+            // Surajpur–Kasna Rd / 6th Meridian Rd (Ishan Chowk -> Beta-1 -> Kailash -> Alpha-1 -> Pari Chowk)
+            ['ishan','amrit'],['amrit','beta'],['beta','kailash'],['kailash','alpha'],['alpha','pari'],['beta','alpha'],
+            // Pari Chowk – Tugalpur – IEML – KP-II links
+            ['pari','tugal'],['tugal','kp2rb'],['tugal','ieml'],['ieml','expo'],['kp2rb','ieml'],
+            // Amity University Rd / IILM Rd / Ruhallapur
+            ['kp2m','amityjn'],['expo','amityjn'],['amityjn','ruhal'],['ruhal','sfsapj']
+        ].map(([a, b]) => [K(a), K(b)]);
+        const BASE_ACCESS_EDGES = [['north','dtc'],['amityjn','iilm'],['ruhal','amity'],['sfsapj','glb'],['sfsapj','sharda'],
+            ['kailash','khosp'],['beta','betaplaza'],['tugal','omaxe'],['ieml','iemlhub']].map(([a, b]) => [K(a), K(b)]);
+
+        // --- Landmark helpers (replace the old single college/hospital/mall IDs) ---
+        const attrType = id => { const n = BASE_NODES.find(b => b.id === id); return n && n.attractionType; };
+        function pickAttr(type, from) {
+            const L = BASE_NODES.filter(n => n.attractionType === type && n.id !== from);
+            let r = Math.random() * L.reduce((s, n) => s + n.w, 0);
+            for (const n of L) { r -= n.w; if (r <= 0) return n.id; }
+            return L[L.length - 1].id;
+        }
+        function pickHospital(from) {
+            const f = BASE_NODES.find(n => n.id === from) || BASE_NODES[0];
+            return BASE_NODES.filter(n => n.attractionType === 'hospital')
+                .sort((a, b) => Math.hypot(a.x - f.x, a.y - f.y) - Math.hypot(b.x - f.x, b.y - f.y))[0].id;
+        }
+
+        let nodes = [];
+        let roadEdges = [];
+        let accessEdges = [];
+        let graph = {};
+
+        function rebuildGraph() {
+            graph = {};
+            nodes.forEach(n => graph[n.id] = []);
+            [...roadEdges, ...accessEdges].forEach(([a, b]) => {
+                if (graph[a] && graph[b]) {
+                    graph[a].push(b);
+                    graph[b].push(a);
+                }
+            });
+        }
+
+        function populateBlockadeDropdown() {
+            const select = document.getElementById('blockade-select');
+            const prevValue = select.value;
+            select.innerHTML = '';
+
+            roadEdges.forEach(([a, b]) => {
+                const key = normalizeEdgeKey(a, b);
+                const opt = document.createElement('option');
+                opt.value = key;
+                const isCustom = a >= BASE_NODES.length || b >= BASE_NODES.length ||
+                    !BASE_EDGES.some(([ba, bb]) => normalizeEdgeKey(ba, bb) === key);
+                const nodeA = getNodeById(a), nodeB = getNodeById(b);
+                opt.textContent = `${nodeA ? nodeA.label : `Hub ${a}`} ↔ ${nodeB ? nodeB.label : `Hub ${b}`}${isCustom ? ' (New)' : ''}`;
+                select.appendChild(opt);
+            });
+
+            if ([...select.options].some(opt => opt.value === prevValue)) {
+                select.value = prevValue;
+            }
+            updateBlockadeButtonLabel();
+        }
+
+        function initNetworkTopology() {
+            nodes = BASE_NODES.map(n => ({ ...n }));
+            roadEdges = BASE_EDGES.map(e => [...e]);
+            accessEdges = BASE_ACCESS_EDGES.map(e => [...e]);
+            customHistory = [];
+            customNodeCounter = 1;
+            buildStartPoint = null;
+            rebuildGraph();
+            populateBlockadeDropdown();
+            updateCustomRoadButtons();
+        }
+
+        // --- 4-Phase Signal Controller (Red & Green Only + All-Red Clearance) ---
+        const trafficSignals = {};
+        BASE_NODES.filter(n => n.hasSignal).forEach((n, idx) => {
+            trafficSignals[n.id] = {
+                nodeId: n.id,
+                phase: (idx % 2) * 2,
+                timer: idx * 0.9,
+                currentLimit: 5.0
+            };
+        });
+
+        function getSignalStates(nodeId) {
+            const sig = trafficSignals[nodeId];
+            if (!sig) return { ew: 'GREEN', ns: 'GREEN', remaining: 0 };
+
+            const emergencyVehicle = vehicles.find(v => v.isAmbulance && v.targetNodeId === nodeId &&
+                Math.hypot(v.targetX - v.x, v.targetY - v.y) < 170 && !v.trappedByBlockade);
+            if (emergencyVehicle) {
+                const remaining = Math.max(0, Math.ceil(sig.currentLimit - sig.timer));
+                return emergencyVehicle.approachAxis === 'EW'
+                    ? { ew: 'GREEN', ns: 'RED', remaining }
+                    : { ew: 'RED', ns: 'GREEN', remaining };
+            }
+
+            const remaining = Math.max(0, Math.ceil(sig.currentLimit - sig.timer));
+            switch (sig.phase) {
+                case 0: return { ew: 'GREEN', ns: 'RED',   remaining };
+                case 1: return { ew: 'RED',   ns: 'RED',   remaining };
+                case 2: return { ew: 'RED',   ns: 'GREEN', remaining };
+                case 3: return { ew: 'RED',   ns: 'RED',   remaining };
+            }
+        }
+
+        function updateTrafficSignals(dt) {
+            Object.values(trafficSignals).forEach(sig => {
+                sig.timer += dt;
+
+                let ewDemand = 0;
+                let nsDemand = 0;
+
+                vehicles.forEach(v => {
+                    const dist = Math.hypot(v.targetX - v.x, v.targetY - v.y);
+                    if (v.targetNodeId === sig.nodeId && dist < 150) {
+                        const priorityWeight = (v.weightKey === 'HEAVY' ? 2.2 : 1.0) + (v.sectorKey === 'PUBLIC' ? 1.5 : 0);
+                        if (v.approachAxis === 'EW') ewDemand += priorityWeight;
+                        else nsDemand += priorityWeight;
+                    }
+                });
+
+                let phaseDuration = 5.0;
+                if (sig.phase === 0) {
+                    phaseDuration = 5.5;
+                    if (adaptiveSignals) {
+                        if (ewDemand === 0 && nsDemand > 0) phaseDuration = 2.0;
+                        else if (ewDemand > nsDemand) phaseDuration = 7.5;
+                    }
+                } else if (sig.phase === 2) {
+                    phaseDuration = 4.0;
+                    if (adaptiveSignals) {
+                        if (nsDemand === 0 && ewDemand > 0) phaseDuration = 2.0;
+                        else if (nsDemand > ewDemand) phaseDuration = 6.5;
+                    }
+                } else {
+                    phaseDuration = 1.2;
+                }
+
+                sig.currentLimit = phaseDuration;
+                if (sig.timer >= phaseDuration) {
+                    sig.timer = 0;
+                    sig.phase = (sig.phase + 1) % 4;
+                }
+            });
+        }
+
+        function normalizeEdgeKey(a, b) {
+            return a < b ? `${a}-${b}` : `${b}-${a}`;
+        }
+
+        function isEdgeBlocked(a, b) {
+            const key = normalizeEdgeKey(a, b);
+            return blockedEdges.has(key) || activeIncidents.has(key);
+        }
+
+        function getNodeById(id) {
+            return nodes.find(n => n.id === id);
+        }
+
+        function getLaneSegment(nodeA, nodeB) {
+            const dx = nodeB.x - nodeA.x;
+            const dy = nodeB.y - nodeA.y;
+            const len = Math.sqrt(dx * dx + dy * dy) || 1;
+            const nx = -dy / len;
+            const ny = dx / len;
+            return {
+                x1: nodeA.x + nx * LANE_OFFSET,
+                y1: nodeA.y + ny * LANE_OFFSET,
+                x2: nodeB.x + nx * LANE_OFFSET,
+                y2: nodeB.y + ny * LANE_OFFSET,
+                angle: Math.atan2(dy, dx),
+                axis: Math.abs(dx) >= Math.abs(dy) ? 'EW' : 'NS'
+            };
+        }
+
+        function generateRandomPath(direction, customStartNodeId = null, destinationNodeId = null) {
+            const startId = customStartNodeId !== null ? customStartNodeId : (direction === 'EAST' ? 0 : 4);
+            const goalId = destinationNodeId !== null ? destinationNodeId : (direction === 'EAST' ? 4 : 0);
+
+            if (startId === goalId) {
+                return null;
+            }
+
+            const queue = [[startId]];
+            const visited = new Set([startId]);
+
+            while (queue.length > 0) {
+                const path = queue.shift();
+                const current = path[path.length - 1];
+
+                if (current === goalId) {
+                    return path;
+                }
+
+                let neighbors = (graph[current] || []).filter(n => !visited.has(n) && !isEdgeBlocked(current, n));
+                neighbors.sort(() => Math.random() - 0.5);
+
+                for (const next of neighbors) {
+                    visited.add(next);
+                    queue.push([...path, next]);
+                }
+            }
+
+            return null;
+        }
+
+        function selectDestinationNode(startId, direction, isAmbulance = false) {
+            if (isAmbulance) return pickHospital(startId);
+
+            const hour = Math.floor((simMinutes % 1440) / 60);
+            const attractionShare = (hour >= 7 && hour < 11) || (hour >= 16 && hour < 20) ? 0.62 : 0.48;
+            if (Math.random() < attractionShare) {
+                const weights = hour >= 7 && hour < 11
+                    ? [['college', 0.48], ['hospital', 0.24], ['mall', 0.28]]
+                    : hour >= 11 && hour < 17
+                        ? [['college', 0.24], ['hospital', 0.26], ['mall', 0.50]]
+                        : hour >= 17 && hour < 22
+                            ? [['college', 0.16], ['hospital', 0.26], ['mall', 0.58]]
+                            : [['college', 0.18], ['hospital', 0.55], ['mall', 0.27]];
+                const choices = weights.filter(([id]) => id !== startId);
+                const totalWeight = choices.reduce((sum, item) => sum + item[1], 0);
+                let roll = Math.random() * totalWeight;
+                for (const [id, weight] of choices) {
+                    roll -= weight;
+                    if (roll <= 0) return pickAttr(id, startId);
+                }
+                return pickAttr(choices[choices.length - 1][0], startId);
+            }
+
+            let destination = pickGate(startId);
+            if (destination === startId) destination = destination === 4 ? 0 : 4;
+            return destination;
+        }
+
+        function getTripAssignment(startId, direction, isAmbulance = false) {
+            let destinationNodeId = selectDestinationNode(startId, direction, isAmbulance);
+            let path = generateRandomPath(direction, startId, destinationNodeId);
+            if (!path && !isAmbulance) {
+                destinationNodeId = direction === 'EAST' ? 4 : 0;
+                if (destinationNodeId === startId) destinationNodeId = destinationNodeId === 4 ? 0 : 4;
+                path = generateRandomPath(direction, startId, destinationNodeId);
+            }
+            return { destinationNodeId, path };
+        }
+
+        // --- Multi-Class Vehicle (Fuel × Weight × Public/Private) ---
+        class Vehicle {
+            constructor(profile, path, direction, destinationNodeId = null) {
+                this.isAmbulance = false;
+                this.assignProfile(profile);
+                this.direction = direction;
+                this.destinationNodeId = destinationNodeId !== null
+                    ? destinationNodeId
+                    : (direction === 'EAST' ? 4 : 0);
+                this.trappedByBlockade = false;
+                this.setPath(path);
+                this.isIdling = false;
+                this.stoppedAtSignal = false;
+                this.isYieldingToAmbulance = false;
+                this.trafficFactor = 1;
+                this.delayMinutes = 0;
+                this.lastPassengerRefresh = simMinutes;
+            }
+
+            assignProfile(profile) {
+                if (profile.isAmbulance) {
+                    this.isAmbulance = true;
+                    this.fuelKey = 'PETROL';
+                    this.weightKey = 'LIGHT';
+                    this.sectorKey = 'PRIVATE';
+                    this.weightTons = 2.5;
+                    this.speed = 3.15;
+                    this.emissionRate = 0.085;
+                    this.size = 9;
+                    this.spacing = 32;
+                    this.fillColor = '#ef4444';
+                    this.ringColor = '#ffffff';
+                    this.ringWidth = 2.5;
+                    this.passengers = 0;
+                    this.capacity = 0;
+                    this.ambulanceReturning = false;
+                    return;
+                }
+
+                if (this.isAmbulance) return;
+                const { fuelKey, weightKey, sectorKey } = profile;
+                this.fuelKey = fuelKey;
+                this.weightKey = weightKey;
+                this.sectorKey = sectorKey;
+
+                const fuel = FUEL_TYPES[fuelKey];
+                const weight = WEIGHT_CLASSES[weightKey];
+                const sector = SECTOR_TYPES[sectorKey];
+
+                this.weightTons = weight.weightTons;
+                this.speed = weight.speed;
+                this.emissionRate = weight.baseEmission * fuel.emissionFactor;
+                this.size = weight.size;
+                this.spacing = weight.spacing;
+                this.fillColor = fuel.color;
+                this.ringColor = sector.ringColor;
+                this.ringWidth = sector.ringWidth;
+                this.capacity = VEHICLE_CAPACITY[sectorKey][weightKey];
+                this.passengers = getPassengerCount(weightKey, sectorKey);
+                this.lastPassengerRefresh = simMinutes;
+            }
+
+            setPath(path) {
+                if (!path || path.length < 2) {
+                    this.trappedByBlockade = true;
+                    return;
+                }
+                const fromNode = getNodeById(path[0]);
+                const toNode = getNodeById(path[1]);
+                if (!fromNode || !toNode) {
+                    this.trappedByBlockade = true;
+                    return;
+                }
+                this.trappedByBlockade = false;
+                this.path = [...path];
+                this.currentNodeIndex = 0;
+                const seg = getLaneSegment(fromNode, toNode);
+                this.x = seg.x1;
+                this.y = seg.y1;
+                this.targetX = seg.x2;
+                this.targetY = seg.y2;
+                this.fromNodeId = fromNode.id;
+                this.targetNodeId = toNode.id;
+                this.approachAxis = seg.axis;
+                this.heading = seg.angle;
+            }
+
+            rerouteAroundBlockade() {
+                if (!this.path || this.path.length < 2) {
+                    const startId = this.path && this.path.length ? this.path[0] : (this.direction === 'EAST' ? 0 : 4);
+                    const detour = generateRandomPath(this.direction, startId, this.destinationNodeId);
+                    if (detour && detour.length >= 2) this.setPath(detour);
+                    else this.trappedByBlockade = true;
+                    return;
+                }
+
+                const currentFrom = this.path ? this.path[this.currentNodeIndex] : (this.direction === 'EAST' ? 0 : 4);
+                const currentTo = this.path && this.path.length > this.currentNodeIndex + 1
+                    ? this.path[this.currentNodeIndex + 1]
+                    : currentFrom;
+
+                if (!getNodeById(currentFrom) || !getNodeById(currentTo)) {
+                    this.resetToStart();
+                    return;
+                }
+
+                if (this.trappedByBlockade || isEdgeBlocked(currentFrom, currentTo)) {
+                    const detour = generateRandomPath(this.direction, currentFrom, this.destinationNodeId);
+                    if (detour && detour.length >= 2) {
+                        this.setPath(detour);
+                    } else {
+                        this.trappedByBlockade = true;
+                    }
+                    return;
+                }
+
+                for (let i = this.currentNodeIndex + 1; i < this.path.length - 1; i++) {
+                    if (isEdgeBlocked(this.path[i], this.path[i + 1])) {
+                        const detour = generateRandomPath(this.direction, currentTo, this.destinationNodeId);
+                        if (detour && detour.length >= 2) {
+                            this.path = [currentFrom, ...detour];
+                            this.currentNodeIndex = 0;
+                            this.trappedByBlockade = false;
+                        } else {
+                            this.trappedByBlockade = true;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // Occasionally adopt newly built roads even without a blockade
+            considerNewShortcut() {
+                if (this.trappedByBlockade || !this.path || this.path.length < 3) return;
+                if (Math.random() > 0.45) return; // ~45% of vehicles switch to test the new road immediately
+                const currentFrom = this.path[this.currentNodeIndex];
+                const currentTo = this.path[this.currentNodeIndex + 1];
+                if (!getNodeById(currentFrom) || !getNodeById(currentTo)) return;
+                const newPath = generateRandomPath(this.direction, currentTo, this.destinationNodeId);
+                if (newPath && newPath.length >= 2) {
+                    this.path = [currentFrom, ...newPath];
+                    this.currentNodeIndex = 0;
+                }
+            }
+
+            isBlockedByTrafficLight(distanceToTarget) {
+                if (!trafficSignals[this.targetNodeId]) return false;
+                if (distanceToTarget < 34 || distanceToTarget > 56) return false;
+
+                const states = getSignalStates(this.targetNodeId);
+                const lightColor = this.approachAxis === 'EW' ? states.ew : states.ns;
+                return lightColor === 'RED';
+            }
+
+            update(dt) {
+                if (!this.isAmbulance && simMinutes - this.lastPassengerRefresh >= 15) {
+                    this.passengers = getPassengerCount(this.weightKey, this.sectorKey);
+                    this.lastPassengerRefresh = simMinutes;
+                }
+
+                const simHoursElapsed = (dt * SIM_MINUTES_PER_SECOND) / 60;
+                const dx = this.targetX - this.x;
+                const dy = this.targetY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                this.stoppedAtSignal = this.isBlockedByTrafficLight(distance);
+                const halted = this.isIdling || this.stoppedAtSignal || this.trappedByBlockade || this.isYieldingToAmbulance;
+
+                const idleMultiplier = halted ? (this.weightKey === 'HEAVY' ? 2.4 : 1.8) :
+                    1.0 + Math.max(0, 1 - this.trafficFactor) * 0.65;
+                const passengerLoadFactor = this.isAmbulance || !this.capacity
+                    ? 1
+                    : 1 + (this.passengers / this.capacity) * 0.18;
+                const effectiveEmissionRate = this.emissionRate * 1.8 * idleMultiplier * passengerLoadFactor;
+                const stepCo2Kg = effectiveEmissionRate * simHoursElapsed;
+
+                totalEmissions += stepCo2Kg;
+                rollingEmissionRate += effectiveEmissionRate;
+
+                if (halted || this.trafficFactor < 0.99) {
+                    const delay = simHoursElapsed * 60 * (halted ? 1 : 1 - this.trafficFactor);
+                    this.delayMinutes += delay;
+                    totalDelayMinutes += delay;
+                }
+
+                if (halted) {
+                    return;
+                }
+
+                const moveStep = this.speed * this.trafficFactor * (dt * 60);
+
+                if (distance < moveStep) {
+                    this.currentNodeIndex++;
+                    if (this.currentNodeIndex >= this.path.length - 1) {
+                        this.completeTrip();
+                    } else {
+                        const fromNode = getNodeById(this.path[this.currentNodeIndex]);
+                        const toNode = getNodeById(this.path[this.currentNodeIndex + 1]);
+                        if (!fromNode || !toNode) {
+                            this.resetToStart();
+                            return;
+                        }
+                        const seg = getLaneSegment(fromNode, toNode);
+                        this.x = seg.x1;
+                        this.y = seg.y1;
+                        this.targetX = seg.x2;
+                        this.targetY = seg.y2;
+                        this.fromNodeId = fromNode.id;
+                        this.targetNodeId = toNode.id;
+                        this.approachAxis = seg.axis;
+                        this.heading = seg.angle;
+                    }
+                } else {
+                    this.x += (dx / distance) * moveStep;
+                    this.y += (dy / distance) * moveStep;
+                }
+            }
+
+            draw() {
+                const halted = this.isIdling || this.stoppedAtSignal || this.trappedByBlockade || this.isYieldingToAmbulance;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.isAmbulance ? '#ef4444' :
+                    this.isYieldingToAmbulance ? '#fbbf24' : halted ? '#94a3b8' : this.fillColor;
+                ctx.fill();
+
+                ctx.strokeStyle = this.isAmbulance ? '#ffffff' :
+                    (this.stoppedAtSignal || this.trappedByBlockade) ? '#f43f5e' : this.ringColor;
+                ctx.lineWidth = this.ringWidth;
+                ctx.stroke();
+                ctx.closePath();
+
+                if (this.isAmbulance) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 8px Segoe UI, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('A', this.x, this.y);
+                } else if (this.weightKey === 'HEAVY') {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 8px Segoe UI, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(this.sectorKey === 'PUBLIC' ? 'BUS' : '12T', this.x, this.y);
+                }
+            }
+
+            startNextTrip(startNodeId = null) {
+                this.direction = Math.random() < 0.5 ? 'EAST' : 'WEST';
+                const originId = startNodeId !== null
+                    ? startNodeId
+                    : (this.direction === 'EAST' ? 0 : 4);
+                let assignment;
+
+                if (this.isAmbulance) {
+                    const destination = this.ambulanceReturning
+                        ? (this.direction === 'EAST' ? 4 : 0)
+                        : pickHospital(originId);
+                    assignment = {
+                        destinationNodeId: destination,
+                        path: generateRandomPath(this.direction, originId, destination)
+                    };
+                } else {
+                    assignment = getTripAssignment(originId, this.direction);
+                }
+
+                this.destinationNodeId = assignment.destinationNodeId;
+                if (assignment.path && assignment.path.length >= 2) {
+                    this.setPath(assignment.path);
+                } else {
+                    const startNode = getNodeById(originId);
+                    this.path = [originId];
+                    this.currentNodeIndex = 0;
+                    this.fromNodeId = originId;
+                    this.targetNodeId = originId;
+                    if (startNode) {
+                        this.x = this.targetX = startNode.x;
+                        this.y = this.targetY = startNode.y;
+                    }
+                    this.trappedByBlockade = true;
+                }
+            }
+
+            completeTrip() {
+                const arrivedAt = this.destinationNodeId;
+                if (attrType(arrivedAt) === 'college') completedAttractionTrips.college++;
+                else if (attrType(arrivedAt) === 'hospital') completedAttractionTrips.hospital++;
+                else if (attrType(arrivedAt) === 'mall') completedAttractionTrips.mall++;
+
+                const hour = Math.floor((simMinutes % 1440) / 60);
+                const baselineFleet = presetMode ? 30 : 54;
+                if (!this.isAmbulance && (hour >= 21 || hour < 6) && vehicles.length > baselineFleet) {
+                    this.shouldDespawn = true;
+                    return;
+                }
+
+                if (this.isAmbulance) {
+                    this.ambulanceReturning = attrType(arrivedAt) === 'hospital';
+                }
+                this.startNextTrip(arrivedAt);
+            }
+
+            resetToStart() {
+                this.ambulanceReturning = false;
+                this.startNextTrip();
+            }
+        }
+
+        function pickVehicleProfile() {
+            for (let attempt = 0; attempt < 36; attempt++) {
+                const sectorProb = boostPublicTransit ? 0.55 : 0.28;
+                const sectorKey = Math.random() < sectorProb ? 'PUBLIC' : 'PRIVATE';
+
+                let weightKey;
+                const wRand = Math.random();
+                if (sectorKey === 'PUBLIC') {
+                    if (wRand < 0.30) weightKey = 'LIGHT';
+                    else if (wRand < 0.65) weightKey = 'MEDIUM';
+                    else weightKey = 'HEAVY';
+                } else {
+                    if (wRand < 0.45) weightKey = 'LIGHT';
+                    else if (wRand < 0.82) weightKey = 'MEDIUM';
+                    else weightKey = 'HEAVY';
+                }
+
+                const fRand = Math.random();
+                const fuelKey = boostPublicTransit && sectorKey === 'PUBLIC'
+                    ? (fRand < 0.65 ? 'EV' : (fRand < 0.90 ? 'HYBRID' : 'PETROL'))
+                    : (fRand < 0.34 ? 'EV' : (fRand < 0.68 ? 'HYBRID' : 'PETROL'));
+                const candidate = { fuelKey, weightKey, sectorKey };
+                if (!isVehicleBanned(candidate)) return candidate;
+            }
+
+            const allowedProfiles = [];
+            for (const sectorKey of ['PUBLIC', 'PRIVATE']) {
+                for (const weightKey of ['LIGHT', 'MEDIUM', 'HEAVY']) {
+                    for (const fuelKey of ['EV', 'HYBRID', 'PETROL']) {
+                        const candidate = { fuelKey, weightKey, sectorKey };
+                        if (!isVehicleBanned(candidate)) allowedProfiles.push(candidate);
+                    }
+                }
+            }
+            return allowedProfiles.length
+                ? allowedProfiles[Math.floor(Math.random() * allowedProfiles.length)]
+                : null;
+        }
+
+        function createTrafficVehicle(direction, isAmbulance = false) {
+            const originId = pickGate();
+            if (isAmbulance) {
+                const path = generateRandomPath(direction, originId, pickHospital(originId));
+                return new Vehicle({ isAmbulance: true }, path, direction, pickHospital(originId));
+            }
+
+            const profile = pickVehicleProfile();
+            if (!profile) return null;
+            const assignment = getTripAssignment(originId, direction);
+            return new Vehicle(profile, assignment.path, direction, assignment.destinationNodeId);
+        }
+
+        function updateTrafficDemand(dt) {
+            trafficGrowthMinutes += dt * SIM_MINUTES_PER_SECOND;
+            const hour = Math.floor((simMinutes % 1440) / 60);
+            if (hour < 6 || hour >= 21) return;
+
+            const peak = (hour >= 7 && hour < 11) || (hour >= 16 && hour < 20);
+            const interval = peak ? 18 : 30;
+            const targetFleet = presetMode ? 52 : 82;
+            if (vehicles.length >= targetFleet) {
+                trafficGrowthMinutes = Math.min(trafficGrowthMinutes, interval);
+                return;
+            }
+
+            if (trafficGrowthMinutes >= interval) {
+                trafficGrowthMinutes -= interval;
+                const direction = vehicles.length % 2 === 0 ? 'EAST' : 'WEST';
+                const vehicle = createTrafficVehicle(direction);
+                if (vehicle) vehicles.push(vehicle);
+            }
+        }
+
+        function initSimulation() {
+            vehicles = [];
+            totalEmissions = 0;
+            totalDelayMinutes = 0;
+            totalIncidentsHandled = 0;
+            activeIncidents.clear();
+            completedAttractionTrips = { college: 0, hospital: 0, mall: 0 };
+            simMinutes = 8 * 60;
+            nextIncidentAt = simMinutes + 45;
+            trafficGrowthMinutes = 0;
+            const initialCount = presetMode ? 30 : 54;
+            document.getElementById('preset-btn').innerText = presetMode
+                ? 'Density: Standard (30 → 52)'
+                : 'Density: Rush Hour (54 → 82)';
+
+            for (let i = 0; i < initialCount - 1; i++) {
+                const dir = i % 2 === 0 ? 'EAST' : 'WEST';
+                const v = createTrafficVehicle(dir);
+                if (!v) continue;
+                const progress = (i / initialCount) * 0.80;
+                v.x = v.x + (v.targetX - v.x) * progress;
+                v.y = v.y + (v.targetY - v.y) * progress;
+                vehicles.push(v);
+            }
+
+            vehicles.push(createTrafficVehicle('EAST', true));
+            updateVehicleBanControls();
+            syncBlockadeUI();
+        }
+
+        function drawLaneArrow(x1, y1, x2, y2) {
+            const mx = (x1 + x2) / 2;
+            const my = (y1 + y2) / 2;
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            ctx.save();
+            ctx.translate(mx, my);
+            ctx.rotate(angle);
+            ctx.fillStyle = 'rgba(148, 163, 184, 0.38)';
+            ctx.beginPath();
+            ctx.moveTo(8, 0);
+            ctx.lineTo(-5, -4.5);
+            ctx.lineTo(-5, 4.5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function getSignalHex(state) {
+            return state === 'GREEN' ? '#22c55e' : '#ef4444';
+        }
+
+        function drawIntersectionSignals(node) {
+            const states = getSignalStates(node.id);
+            const ewColor = getSignalHex(states.ew);
+            const nsColor = getSignalHex(states.ns);
+
+            const boxX = node.x - 34;
+            const boxY = node.labelPos === 'top' ? node.y + 34 : node.y - 52;
+
+            ctx.fillStyle = '#090d16';
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.roundRect(boxX, boxY, 68, 20, 5);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(boxX + 10, boxY + 10, 4.5, 0, Math.PI * 2);
+            ctx.fillStyle = ewColor;
+            ctx.fill();
+
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = 'bold 10px Segoe UI, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${states.remaining}s`, boxX + 34, boxY + 10);
+
+            ctx.beginPath();
+            ctx.arc(boxX + 58, boxY + 10, 4.5, 0, Math.PI * 2);
+            ctx.fillStyle = nsColor;
+            ctx.fill();
+
+            ctx.strokeStyle = ewColor;
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx.moveTo(node.x - 34, node.y + 4);
+            ctx.lineTo(node.x - 34, node.y + 30);
+            ctx.moveTo(node.x + 34, node.y - 30);
+            ctx.lineTo(node.x + 34, node.y - 4);
+            ctx.stroke();
+
+            ctx.strokeStyle = nsColor;
+            ctx.beginPath();
+            ctx.moveTo(node.x - 30, node.y - 34);
+            ctx.lineTo(node.x - 4, node.y - 34);
+            ctx.moveTo(node.x + 4, node.y + 34);
+            ctx.lineTo(node.x + 30, node.y + 34);
+            ctx.stroke();
+        }
+
+        function drawBlockedBarrier(a, b) {
+            const nodeA = getNodeById(a);
+            const nodeB = getNodeById(b);
+            if (!nodeA || !nodeB) return;
+
+            const midX = (nodeA.x + nodeB.x) / 2;
+            const midY = (nodeA.y + nodeB.y) / 2;
+            const angle = Math.atan2(nodeB.y - nodeA.y, nodeB.x - nodeA.x);
+
+            ctx.save();
+            ctx.translate(midX, midY);
+            ctx.rotate(angle);
+
+            ctx.strokeStyle = '#f43f5e';
+            ctx.lineWidth = 10;
+            ctx.beginPath();
+            ctx.moveTo(0, -36);
+            ctx.lineTo(0, 36);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3.5;
+            ctx.setLineDash([7, 7]);
+            ctx.beginPath();
+            ctx.moveTo(0, -34);
+            ctx.lineTo(0, 34);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.restore();
+
+            const edgeKey = normalizeEdgeKey(a, b);
+            const incident = activeIncidents.get(edgeKey);
+            ctx.fillStyle = incident ? '#fb923c' : '#f43f5e';
+            const labelWidth = incident ? 138 : 64;
+            ctx.fillRect(midX - labelWidth / 2, midY - 50, labelWidth, 16);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 10px Segoe UI, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(incident ? `INCIDENT · ${incident.severity.toUpperCase()}` : 'BLOCKED', midX, midY - 42);
+        }
+
+        function drawRoadNetwork() {
+            // 1. Outer Road Asphalt
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = ROAD_WIDTH;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            roadEdges.forEach(([a, b]) => {
+                const nA = getNodeById(a), nB = getNodeById(b);
+                if (!nA || !nB) return;
+                ctx.beginPath();
+                ctx.moveTo(nA.x, nA.y);
+                ctx.lineTo(nB.x, nB.y);
+                ctx.stroke();
+            });
+
+            // 2. Road Shoulders / Curbs
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = ROAD_WIDTH - 6;
+            roadEdges.forEach(([a, b]) => {
+                const nA = getNodeById(a), nB = getNodeById(b);
+                if (!nA || !nB) return;
+                ctx.beginPath();
+                ctx.moveTo(nA.x, nA.y);
+                ctx.lineTo(nB.x, nB.y);
+                ctx.stroke();
+            });
+
+            // 3. Inner 2-Lane Surface
+            roadEdges.forEach(([a, b]) => {
+                const nA = getNodeById(a), nB = getNodeById(b);
+                if (!nA || !nB) return;
+                ctx.strokeStyle = isEdgeBlocked(a, b) ? '#3b1219' : '#1e293b';
+                ctx.lineWidth = ROAD_WIDTH - 12;
+                ctx.beginPath();
+                ctx.moveTo(nA.x, nA.y);
+                ctx.lineTo(nB.x, nB.y);
+                ctx.stroke();
+            });
+
+            // 4. Center 2-Lane Divider & Directional Lane Arrows
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([10, 12]);
+            roadEdges.forEach(([a, b]) => {
+                const nA = getNodeById(a), nB = getNodeById(b);
+                if (!nA || !nB) return;
+                ctx.beginPath();
+                ctx.moveTo(nA.x, nA.y);
+                ctx.lineTo(nB.x, nB.y);
+                ctx.stroke();
+            });
+            ctx.setLineDash([]);
+
+            roadEdges.forEach(([a, b]) => {
+                const nA = getNodeById(a), nB = getNodeById(b);
+                if (!nA || !nB) return;
+                const forwardLane = getLaneSegment(nA, nB);
+                const reverseLane = getLaneSegment(nB, nA);
+                drawLaneArrow(forwardLane.x1, forwardLane.y1, forwardLane.x2, forwardLane.y2);
+                drawLaneArrow(reverseLane.x1, reverseLane.y1, reverseLane.x2, reverseLane.y2);
+            });
+
+            // Attraction access paths are separate dashed connectors, not part of the main road surface.
+            ctx.save();
+            ctx.strokeStyle = '#c084fc';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([8, 7]);
+            accessEdges.forEach(([a, b]) => {
+                const nA = getNodeById(a), nB = getNodeById(b);
+                if (!nA || !nB) return;
+                ctx.beginPath();
+                ctx.moveTo(nA.x, nA.y);
+                ctx.lineTo(nB.x, nB.y);
+                ctx.stroke();
+            });
+            ctx.restore();
+
+            // 5. Interactive Road-Builder Preview Overlay
+            if (mapMode === 'BUILD') {
+                if (buildStartPoint && hoverPoint) {
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+                    ctx.lineWidth = ROAD_WIDTH;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(buildStartPoint.x, buildStartPoint.y);
+                    ctx.lineTo(hoverPoint.x, hoverPoint.y);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([8, 8]);
+                    ctx.beginPath();
+                    ctx.moveTo(buildStartPoint.x, buildStartPoint.y);
+                    ctx.lineTo(hoverPoint.x, hoverPoint.y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                if (buildStartPoint) {
+                    ctx.beginPath();
+                    ctx.arc(buildStartPoint.x, buildStartPoint.y, NODE_RADIUS + 6, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#22c55e';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                }
+
+                if (hoverPoint) {
+                    ctx.beginPath();
+                    ctx.arc(hoverPoint.x, hoverPoint.y, NODE_RADIUS + 4, 0, Math.PI * 2);
+                    ctx.strokeStyle = hoverPoint.snapNodeId !== null ? '#38bdf8' : '#94a3b8';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+
+            // 6. Intersections, Traffic Lights & Landmark Labels
+            nodes.forEach(node => {
+                const radius = node.isAttraction ? 19 : node.isEntrance ? 13 : NODE_RADIUS;
+                const attractionColor = node.attractionType === 'college' ? '#a78bfa' :
+                    node.attractionType === 'hospital' ? '#fb7185' : '#fbbf24';
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = node.isAttraction ? '#17152a' : '#0f172a';
+                ctx.fill();
+                ctx.strokeStyle = node.isAttraction ? attractionColor : node.isEntrance ? '#c084fc' : node.isCustom ? '#38bdf8' : '#64748b';
+                ctx.lineWidth = node.isAttraction || node.isEntrance ? 3 : 2.8;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.isAttraction ? 7 : node.isEntrance ? 4 : 10, 0, Math.PI * 2);
+                ctx.fillStyle = node.isAttraction ? attractionColor : node.isEntrance ? '#c084fc' : node.isCustom ? '#0284c7' : '#334155';
+                ctx.fill();
+
+                if (node.isAttraction) {
+                    ctx.fillStyle = '#0f172a';
+                    ctx.font = 'bold 9px Segoe UI, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(node.attractionType === 'college' ? 'C' : node.attractionType === 'hospital' ? '+' : 'M', node.x, node.y);
+                }
+
+                if (node.hasSignal) {
+                    drawIntersectionSignals(node);
+                }
+
+                ctx.font = node.isEntrance ? 'bold 10px Segoe UI, sans-serif' : 'bold 12px Segoe UI, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const labelOffset = node.isAttraction ? 31 : node.isEntrance ? 29 : 46;
+                const labelY = node.labelPos === 'top' ? node.y - labelOffset : node.y + labelOffset;
+                const textWidth = ctx.measureText(node.label).width + 14;
+
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.fillRect(node.x - textWidth / 2, labelY - 10, textWidth, 20);
+
+                ctx.fillStyle = node.isAttraction ? attractionColor : node.isEntrance ? '#d8b4fe' : node.isCustom ? '#7dd3fc' : '#e2e8f0';
+                ctx.fillText(node.label, node.x, labelY);
+            });
+
+            // 7. Render All Active Road Blockade Barriers
+            const allBlockedEdges = new Set([...blockedEdges, ...activeIncidents.keys()]);
+            allBlockedEdges.forEach(edgeKey => {
+                const [a, b] = edgeKey.split('-').map(Number);
+                drawBlockedBarrier(a, b);
+            });
+        }
+
+        function handleCollisions() {
+            vehicles.forEach(v => {
+                v.isIdling = false;
+                v.isYieldingToAmbulance = false;
+                v.trafficFactor = 1;
+            });
+
+            const ambulances = vehicles.filter(v => v.isAmbulance);
+            vehicles.forEach(vehicle => {
+                if (vehicle.isAmbulance) return;
+                if (ambulances.some(ambulance => Math.hypot(vehicle.x - ambulance.x, vehicle.y - ambulance.y) < 92)) {
+                    vehicle.isYieldingToAmbulance = true;
+                }
+            });
+
+            for (let i = 0; i < vehicles.length; i++) {
+                for (let j = i + 1; j < vehicles.length; j++) {
+                    const a = vehicles[i], b = vehicles[j];
+                    if (a.isAmbulance || b.isAmbulance || a.direction !== b.direction) continue;
+                    if (a.fromNodeId === undefined || b.fromNodeId === undefined || a.targetNodeId === undefined || b.targetNodeId === undefined) continue;
+                    if (a.fromNodeId !== b.fromNodeId || a.targetNodeId !== b.targetNodeId) continue;
+
+                    const dx = b.x - a.x;
+                    const dy = b.y - a.y;
+                    const distance = Math.hypot(dx, dy);
+                    const minGap = Math.max(a.spacing, b.spacing);
+                    const alongA = dx * Math.cos(a.heading) + dy * Math.sin(a.heading);
+                    const trailing = alongA >= 0 ? a : b;
+                    const gap = Math.max(0, distance - Math.min(a.size, b.size));
+
+                    if (gap < minGap) trailing.isIdling = true;
+                    else if (gap < minGap * 2.5) {
+                        trailing.trafficFactor = Math.min(trailing.trafficFactor, Math.max(0.3, gap / (minGap * 2.5)));
+                    }
+                }
+            }
+        }
+
+        function getTimeOfDayLabel(hours24) {
+            if (hours24 >= 8 && hours24 < 11) return 'Morning Rush Hour (2-Way Surge)';
+            if (hours24 >= 11 && hours24 < 17) return 'Midday Campus Flow';
+            if (hours24 >= 17 && hours24 < 21) return 'Evening Peak Traffic';
+            return 'Night Low-Density Flow';
+        }
+
+        function updateClockAndUI() {
+            const dayNumber = Math.floor(simMinutes / 1440) + 1;
+            const minsInDay = Math.floor(simMinutes % 1440);
+            const hours24 = Math.floor(minsInDay / 60);
+            const mins = minsInDay % 60;
+            const period = hours24 >= 12 ? 'PM' : 'AM';
+            const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+
+            document.getElementById('clock-value').innerText =
+                `Day ${dayNumber} — ${String(hours12).padStart(2, '0')}:${String(mins).padStart(2, '0')} ${period}`;
+            document.getElementById('time-period').innerText = getTimeOfDayLabel(hours24);
+
+            document.getElementById('co2-value').innerText = totalEmissions.toFixed(1) + ' kg';
+            const projected24h = rollingEmissionRate * 24;
+            document.getElementById('daily-rate').innerText =
+                `24h Projected: ${Math.round(projected24h)} kg/day`;
+
+            let totalTons = 0;
+            let evCount = 0, hybridCount = 0, petrolCount = 0;
+            let publicCount = 0, privateCount = 0, publicPax = 0, privatePax = 0;
+            let speedSum = 0;
+
+            vehicles.forEach(v => {
+                totalTons += v.weightTons;
+                if (v.fuelKey === 'EV') evCount++;
+                else if (v.fuelKey === 'HYBRID') hybridCount++;
+                else petrolCount++;
+
+                if (v.sectorKey === 'PUBLIC') {
+                    publicCount++;
+                    publicPax += v.passengers;
+                } else {
+                    privateCount++;
+                    privatePax += v.passengers;
+                }
+
+                const stopped = v.isIdling || v.stoppedAtSignal || v.trappedByBlockade || v.isYieldingToAmbulance;
+                if (!stopped) speedSum += v.speed * v.trafficFactor * 18;
+            });
+
+            document.getElementById('total-tonnage').innerText = totalTons.toFixed(1) + ' T';
+            document.getElementById('fuel-breakdown').innerText =
+                `EV: ${evCount} • Hybrid: ${hybridCount} • Petrol: ${petrolCount}`;
+            document.getElementById('sector-breakdown').innerText =
+                `Public: ${publicCount} (~${publicPax} pax) • Private: ${privateCount}`;
+
+            const passengerTotal = publicPax + privatePax;
+            const delayedVehicles = vehicles.filter(v =>
+                v.isIdling || v.stoppedAtSignal || v.trappedByBlockade || v.isYieldingToAmbulance || v.trafficFactor < 0.9
+            ).length;
+            const avgSpeed = vehicles.length > 0 ? speedSum / vehicles.length : 0;
+            document.getElementById('speed-value').innerText = Math.round(avgSpeed) + ' km/h';
+            document.getElementById('vehicle-count').innerText = `Vehicles: ${vehicles.length}`;
+            document.getElementById('passenger-count').innerText = `Passengers in vehicles: ${passengerTotal} (${publicPax} public • ${privatePax} private)`;
+            document.getElementById('delay-value').innerText =
+                `Delayed: ${delayedVehicles} vehicles • ${Math.round(totalDelayMinutes)} vehicle-min`;
+            document.getElementById('destination-counts').innerText =
+                `Completed trips — College: ${completedAttractionTrips.college} • Hospital: ${completedAttractionTrips.hospital} • Mall: ${completedAttractionTrips.mall}`;
+
+            const ambulance = vehicles.find(v => v.isAmbulance);
+            const yieldingCount = vehicles.filter(v => v.isYieldingToAmbulance).length;
+            document.getElementById('ambulance-status').innerText = ambulance
+                ? `Ambulance: ${attrType(ambulance.destinationNodeId) === 'hospital' ? 'en route to hospital' : 'returning from hospital'} • ${yieldingCount} vehicles yielding`
+                : 'Ambulance: unavailable';
+
+            const incidentEntries = [...activeIncidents.entries()];
+            document.getElementById('incident-count').innerText = `Active incidents: ${incidentEntries.length}`;
+            document.getElementById('incident-details').innerText = incidentEntries.length
+                ? incidentEntries.map(([key, incident]) => {
+                    const [a, b] = key.split('-').map(Number);
+                    const nA = getNodeById(a), nB = getNodeById(b);
+                    const road = nA && nB ? `${nA.label} ↔ ${nB.label}` : key;
+                    const remaining = Math.max(0, Math.ceil(incident.expiresAt - simMinutes));
+                    return `${incident.type} (${incident.severity}) — ${road}, ${remaining} sim min left`;
+                }).join(' | ')
+                : 'No active incidents';
+            document.getElementById('incident-handled').innerText = `Incidents recovered: ${totalIncidentsHandled}`;
+        }
+
+        function redrawStaticFrame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawRoadNetwork();
+            vehicles.forEach(v => v.draw());
+            updateClockAndUI();
+        }
+
+        function updateCustomRoadButtons() {
+            document.getElementById('undo-road-btn').innerText = `↩ Undo Road (${customHistory.length})`;
+        }
+
+        function toggleMapMode() {
+            const btn = document.getElementById('map-mode-btn');
+            const hint = document.getElementById('canvas-hint');
+            buildStartPoint = null;
+
+            if (mapMode === 'BLOCK') {
+                mapMode = 'BUILD';
+                btn.innerText = '➕ Mode: Build New Road (Active)';
+                btn.classList.add('adaptive-active');
+                hint.innerText = '➕ Build Mode: Click any junction or empty space to start a new 2-lane road';
+            } else {
+                mapMode = 'BLOCK';
+                btn.innerText = '🚧 Mode: Block / Unblock Roads';
+                btn.classList.remove('adaptive-active');
+                hint.innerText = '🚧 Block Mode: Click any road on the map to block/unblock it';
+            }
+            if (isPaused) redrawStaticFrame();
+        }
+
+        function findNearestNode(x, y, maxDist = 42) {
+            let best = null;
+            let bestDist = maxDist;
+            nodes.forEach(n => {
+                const d = Math.hypot(x - n.x, y - n.y);
+                if (d < bestDist) {
+                    bestDist = d;
+                    best = n;
+                }
+            });
+            return best;
+        }
+
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: Math.max(55, Math.min(canvas.width - 55, (e.clientX - rect.left) * scaleX)),
+                y: Math.max(55, Math.min(canvas.height - 55, (e.clientY - rect.top) * scaleY))
+            };
+        }
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (mapMode !== 'BUILD') {
+                hoverPoint = null;
+                return;
+            }
+            const pt = getCanvasCoords(e);
+            const snap = findNearestNode(pt.x, pt.y, 42);
+            hoverPoint = snap
+                ? { x: snap.x, y: snap.y, snapNodeId: snap.id }
+                : { x: pt.x, y: pt.y, snapNodeId: null };
+            if (isPaused) redrawStaticFrame();
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            hoverPoint = null;
+            if (isPaused) redrawStaticFrame();
+        });
+
+        function handleBuildClick(pt) {
+            const hint = document.getElementById('canvas-hint');
+            const snap = findNearestNode(pt.x, pt.y, 42);
+
+            if (!buildStartPoint) {
+                if (snap) {
+                    buildStartPoint = { nodeId: snap.id, x: snap.x, y: snap.y, isNewNode: false };
+                    hint.innerText = `➕ Start: ${snap.label} — Now click a second junction or empty spot to connect`;
+                } else {
+                    const newId = nodes.reduce((m, n) => Math.max(m, n.id), 0) + 1;
+                    const newNode = {
+                        id: newId,
+                        x: Math.round(pt.x),
+                        y: Math.round(pt.y),
+                        label: `New Hub ${customNodeCounter++}`,
+                        labelPos: pt.y < 350 ? 'top' : 'bottom',
+                        hasSignal: false,
+                        isCustom: true
+                    };
+                    nodes.push(newNode);
+                    rebuildGraph();
+                    buildStartPoint = { nodeId: newId, x: newNode.x, y: newNode.y, isNewNode: true };
+                    hint.innerText = `➕ Start: ${newNode.label} — Click a second junction or empty spot to finish road`;
+                }
+                if (isPaused) redrawStaticFrame();
+                return;
+            }
+
+            // Second click: complete the new 2-lane road
+            const createdNodes = buildStartPoint.isNewNode ? [buildStartPoint.nodeId] : [];
+            let endNodeId;
+
+            if (snap) {
+                if (snap.id === buildStartPoint.nodeId) {
+                    // Clicked same node twice: cancel selection
+                    if (buildStartPoint.isNewNode) {
+                        nodes = nodes.filter(n => n.id !== buildStartPoint.nodeId);
+                        rebuildGraph();
+                    }
+                    buildStartPoint = null;
+                    hint.innerText = '➕ Build Mode: Click any junction or empty space to start a new 2-lane road';
+                    if (isPaused) redrawStaticFrame();
+                    return;
+                }
+                endNodeId = snap.id;
+            } else {
+                endNodeId = nodes.reduce((m, n) => Math.max(m, n.id), 0) + 1;
+                const endNode = {
+                    id: endNodeId,
+                    x: Math.round(pt.x),
+                    y: Math.round(pt.y),
+                    label: `New Hub ${customNodeCounter++}`,
+                    labelPos: pt.y < 350 ? 'top' : 'bottom',
+                    hasSignal: false,
+                    isCustom: true
+                };
+                nodes.push(endNode);
+                createdNodes.push(endNodeId);
+            }
+
+            const newKey = normalizeEdgeKey(buildStartPoint.nodeId, endNodeId);
+            const alreadyExists = roadEdges.some(([a, b]) => normalizeEdgeKey(a, b) === newKey);
+
+            if (!alreadyExists) {
+                roadEdges.push([buildStartPoint.nodeId, endNodeId]);
+                customHistory.push({ edge: [buildStartPoint.nodeId, endNodeId], createdNodes });
+                rebuildGraph();
+                populateBlockadeDropdown();
+                updateCustomRoadButtons();
+
+                // Let trapped or nearby vehicles immediately utilize the new road
+                vehicles.forEach(v => {
+                    if (v.trappedByBlockade) v.rerouteAroundBlockade();
+                    else v.considerNewShortcut();
+                });
+
+                const nA = getNodeById(buildStartPoint.nodeId);
+                const nB = getNodeById(endNodeId);
+                hint.innerText = `✅ Built 2-Lane Road: ${nA.label} ↔ ${nB.label} (Click anywhere to build another)`;
+            } else {
+                hint.innerText = '⚠️ Those two junctions are already connected';
+            }
+
+            buildStartPoint = null;
+            if (isPaused) redrawStaticFrame();
+        }
+
+        function undoLastCustomRoad() {
+            if (customHistory.length === 0) return;
+            const last = customHistory.pop();
+            const removeKey = normalizeEdgeKey(last.edge[0], last.edge[1]);
+
+            roadEdges = roadEdges.filter(([a, b]) => normalizeEdgeKey(a, b) !== removeKey);
+            blockedEdges.delete(removeKey);
+            activeIncidents.delete(removeKey);
+
+            if (last.createdNodes.length > 0) {
+                const removeSet = new Set(last.createdNodes);
+                nodes = nodes.filter(n => !removeSet.has(n.id));
+            }
+
+            buildStartPoint = null;
+            rebuildGraph();
+            populateBlockadeDropdown();
+            updateCustomRoadButtons();
+            syncBlockadeUI();
+
+            vehicles.forEach(v => {
+                if (!v.path || v.path.some(id => !getNodeById(id))) {
+                    v.resetToStart();
+                } else {
+                    v.rerouteAroundBlockade();
+                }
+            });
+            if (isPaused) redrawStaticFrame();
+        }
+
+        function resetCustomNetwork() {
+            if (customHistory.length === 0 && !buildStartPoint) return;
+            blockedEdges.clear();
+            activeIncidents.clear();
+            initNetworkTopology();
+            syncBlockadeUI();
+            vehicles.forEach(v => v.resetToStart());
+            if (isPaused) redrawStaticFrame();
+        }
+
+        function updateBlockadeButtonLabel() {
+            const selectedKey = document.getElementById('blockade-select').value;
+            const btn = document.getElementById('incident-btn');
+            if (blockedEdges.has(selectedKey)) {
+                btn.innerText = '✅ Unblock Road';
+                btn.classList.remove('alert');
+                btn.classList.add('resume');
+            } else {
+                btn.innerText = '🚧 Block Road';
+                btn.classList.remove('resume');
+                btn.classList.add('alert');
+            }
+        }
+
+        function syncBlockadeUI() {
+            const allBlockedEdges = new Set([...blockedEdges, ...activeIncidents.keys()]);
+            const count = allBlockedEdges.size;
+            document.getElementById('blockade-count').innerText = count;
+            document.getElementById('clear-all-btn').innerText = `Clear All (${count})`;
+            updateBlockadeButtonLabel();
+
+            const notification = document.getElementById('notification');
+            if (count > 0) {
+                const labels = [...allBlockedEdges].map(key => {
+                    const [a, b] = key.split('-').map(Number);
+                    const nA = getNodeById(a), nB = getNodeById(b);
+                    const incident = activeIncidents.get(key);
+                    const reason = incident ? `${incident.type} · ${incident.severity}` : 'Manual block';
+                    return nA && nB ? `${nA.label} ↔ ${nB.label} (${reason})` : `${key} (${reason})`;
+                });
+                notification.innerText = `🚨 ${count} ROAD${count > 1 ? 'S' : ''} BLOCKED: ${labels.join('  |  ')} 🚨`;
+                notification.style.display = 'block';
+            } else {
+                notification.style.display = 'none';
+            }
+
+            vehicles.forEach(v => v.rerouteAroundBlockade());
+            if (isPaused) redrawStaticFrame();
+        }
+
+        function toggleEdgeBlockade(edgeKey) {
+            if (blockedEdges.has(edgeKey)) {
+                blockedEdges.delete(edgeKey);
+            } else {
+                blockedEdges.add(edgeKey);
+            }
+            const select = document.getElementById('blockade-select');
+            if ([...select.options].some(opt => opt.value === edgeKey)) {
+                select.value = edgeKey;
+            }
+            syncBlockadeUI();
+        }
+
+        function toggleSelectedRoadBlockade() {
+            const selectedKey = document.getElementById('blockade-select').value;
+            if (selectedKey) toggleEdgeBlockade(selectedKey);
+        }
+
+        function clearAllBlockades() {
+            if (blockedEdges.size === 0 && activeIncidents.size === 0) return;
+            blockedEdges.clear();
+            activeIncidents.clear();
+            syncBlockadeUI();
+        }
+
+        function updateRandomIncidents() {
+            let changed = false;
+
+            for (const [edgeKey, incident] of activeIncidents.entries()) {
+                if (simMinutes >= incident.expiresAt) {
+                    activeIncidents.delete(edgeKey);
+                    totalIncidentsHandled++;
+                    changed = true;
+                }
+            }
+
+            if (simMinutes >= nextIncidentAt) {
+                nextIncidentAt = simMinutes + 80 + Math.random() * 70;
+                if (Math.random() < 0.72) {
+                    const availableRoads = roadEdges.filter(([a, b]) => !isEdgeBlocked(a, b));
+                    if (availableRoads.length) {
+                        const [a, b] = availableRoads[Math.floor(Math.random() * availableRoads.length)];
+                        const incidents = [
+                            { type: 'Vehicle Accident', severity: 'Minor', duration: 45 },
+                            { type: 'Vehicle Breakdown', severity: 'Moderate', duration: 75 },
+                            { type: 'Major Collision', severity: 'Severe', duration: 120 },
+                            { type: 'Road Works', severity: 'Moderate', duration: 95 }
+                        ];
+                        const incident = incidents[Math.floor(Math.random() * incidents.length)];
+                        const key = normalizeEdgeKey(a, b);
+                        activeIncidents.set(key, {
+                            type: incident.type,
+                            severity: incident.severity,
+                            startedAt: simMinutes,
+                            expiresAt: simMinutes + incident.duration + Math.random() * 25
+                        });
+                        changed = true;
+                    }
+                }
+            }
+
+            if (changed) syncBlockadeUI();
+        }
+
+        canvas.addEventListener('click', (e) => {
+            const pt = getCanvasCoords(e);
+
+            if (mapMode === 'BUILD') {
+                handleBuildClick(pt);
+                return;
+            }
+
+            let closestEdge = null;
+            let minDist = 36;
+
+            roadEdges.forEach(([a, b]) => {
+                const nA = getNodeById(a), nB = getNodeById(b);
+                if (!nA || !nB) return;
+                const x1 = nA.x, y1 = nA.y;
+                const x2 = nB.x, y2 = nB.y;
+                const l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2;
+                let t = ((pt.x - x1) * (x2 - x1) + (pt.y - y1) * (y2 - y1)) / l2;
+                t = Math.max(0.15, Math.min(0.85, t));
+                const projX = x1 + t * (x2 - x1);
+                const projY = y1 + t * (y2 - y1);
+                const dist = Math.hypot(pt.x - projX, pt.y - projY);
+
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestEdge = normalizeEdgeKey(a, b);
+                }
+            });
+
+            if (closestEdge) {
+                toggleEdgeBlockade(closestEdge);
+            }
+        });
+
+        function togglePause() {
+            isPaused = !isPaused;
+            const btn = document.getElementById('pause-btn');
+            const badge = document.getElementById('paused-badge');
+
+            if (isPaused) {
+                btn.innerText = '▶ Resume Traffic';
+                btn.classList.remove('pause');
+                btn.classList.add('resume');
+                badge.style.display = 'block';
+            } else {
+                btn.innerText = '⏸ Stop Traffic';
+                btn.classList.remove('resume');
+                btn.classList.add('pause');
+                badge.style.display = 'none';
+                lastFrameTime = performance.now();
+                requestAnimationFrame(animate);
+            }
+        }
+
+        function toggleAdaptiveSignals() {
+            adaptiveSignals = !adaptiveSignals;
+            const btn = document.getElementById('signal-btn');
+            if (adaptiveSignals) {
+                btn.innerText = '🧠 Signals: AI Adaptive';
+                btn.classList.add('adaptive-active');
+            } else {
+                btn.innerText = '🚦 Signals: Fixed Timer';
+                btn.classList.remove('adaptive-active');
+            }
+            if (isPaused) redrawStaticFrame();
+        }
+
+        function togglePublicTransitBoost() {
+            boostPublicTransit = !boostPublicTransit;
+            const btn = document.getElementById('transit-btn');
+            if (boostPublicTransit) {
+                btn.innerText = '🚌 Public Transit: Priority (55%)';
+                btn.classList.add('adaptive-active');
+            } else {
+                btn.innerText = '🚌 Public Transit: Standard';
+                btn.classList.remove('adaptive-active');
+            }
+            vehicles.forEach(v => {
+                if (!v.isAmbulance) {
+                    const profile = pickVehicleProfile();
+                    if (profile) v.assignProfile(profile);
+                }
+            });
+            vehicles = vehicles.filter(v => !isVehicleBanned(v));
+            updateClockAndUI();
+            if (isPaused) redrawStaticFrame();
+        }
+
+        function toggleHeavyBan() {
+            restrictHeavyPetrol = !restrictHeavyPetrol;
+            const btn = document.getElementById('heavy-btn');
+            if (restrictHeavyPetrol) {
+                btn.innerText = '🚫 Heavy Petrol/Diesel: Banned';
+                btn.classList.add('policy-active');
+                removeBannedVehicles('Heavy petrol / ICE ban');
+            } else {
+                btn.innerText = '🚛 Heavy Petrol/Diesel: Allowed';
+                btn.classList.remove('policy-active');
+                lastBanImpact = 'Heavy petrol / ICE ban lifted; future arrivals may include this type.';
+            }
+            updateVehicleBanControls();
+            updateClockAndUI();
+            if (isPaused) redrawStaticFrame();
+        }
+
+        function togglePresetMode() {
+            presetMode = !presetMode;
+            initSimulation();
+            if (isPaused) redrawStaticFrame();
+        }
+
+        // --- Main Loop ---
+        function animate(now) {
+            if (isPaused) return;
+
+            const dt = Math.min((now - lastFrameTime) / 1000, 0.1);
+            lastFrameTime = now;
+
+            simMinutes += dt * SIM_MINUTES_PER_SECOND;
+            rollingEmissionRate = 0;
+
+            updateRandomIncidents();
+            updateTrafficDemand(dt);
+            updateTrafficSignals(dt);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawRoadNetwork();
+            handleCollisions();
+
+            vehicles.forEach(vehicle => {
+                vehicle.update(dt);
+                vehicle.draw();
+            });
+            vehicles = vehicles.filter(vehicle => !vehicle.shouldDespawn);
+
+            updateClockAndUI();
+            requestAnimationFrame(animate);
+        }
+
+        initNetworkTopology();
+        initSimulation();
+        requestAnimationFrame(animate);
+    </script>
+<script>
+/* ===== Real-map 3D layer: original simulation stays untouched; this only renders it ===== */
+(()=>{
+const NLL={};BASE_NODES.forEach(n=>NLL[n.id]=[n.lng,n.lat]);
+const O=[GEO_ORIGIN.lng,GEO_ORIGIN.lat],toM=([g,t])=>[(g-O[0])*KX,(t-O[1])*KY],toLL=([e,n])=>[O[0]+e/KX,O[1]+n/KY];
+const bb=pad=>{const L=Object.values(NLL);return[[Math.min(...L.map(p=>p[0]))-pad,Math.min(...L.map(p=>p[1]))-pad],[Math.max(...L.map(p=>p[0]))+pad,Math.max(...L.map(p=>p[1]))+pad]]};
+const EDIT=/[?&]edit/.test(location.search);
+const prep=p=>{const c=[0];for(let i=1;i<p.length;i++)c.push(c[i-1]+Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]));return c};
+const GE={},ACC=new Set(BASE_ACCESS_EDGES.map(([a,b])=>normalizeEdgeKey(a,b)));
+const ribbon=p=>p;
+const setG=(k,p)=>{p=ribbon(p,k);const c=prep(p);GE[k]={p,c,len:c[c.length-1]}};
+const ALL=[...BASE_EDGES,...BASE_ACCESS_EDGES].map(([a,b])=>[Math.min(a,b),Math.max(a,b)]);
+ALL.forEach(([a,b])=>setG(normalizeEdgeKey(a,b),[toM(NLL[a]),toM(NLL[b])]));
+function at(G,s){const{p,c}=G;s=Math.max(0,Math.min(s,G.len));let i=1;while(i<c.length-1&&c[i]<s)i++;
+  const t=(s-c[i-1])/((c[i]-c[i-1])||1),dx=p[i][0]-p[i-1][0],dy=p[i][1]-p[i-1][1],h=Math.hypot(dx,dy)||1;
+  return[p[i-1][0]+dx*t,p[i-1][1]+dy*t,dx/h,dy/h]}
+async function snap([a,b]){const k=normalizeEdgeKey(a,b);if(ACC.has(k))return;
+  try{const c=new AbortController(),tm=setTimeout(()=>c.abort(),9000);
+    const j=await(await fetch(`https://router.project-osrm.org/route/v1/driving/${NLL[a]};${NLL[b]}?overview=full&geometries=geojson`,{signal:c.signal})).json();clearTimeout(tm);
+    const r=j.routes[0],A=toM(NLL[a]),B=toM(NLL[b]);
+    if(r.distance<Math.hypot(A[0]-B[0],A[1]-B[1])*2.4)setG(k,[A,...r.geometry.coordinates.map(toM),B]);}catch(e){}}
+
+/* ---- 3D vehicles (one per simulation vehicle) ---- */
+const TY={car:{L:4.2,W:1.8,H:1.5,cab:[.5,-.05]},suv:{L:4.8,W:2,H:1.9,cab:[.6,-.05]},truck:{L:9,W:2.5,H:3.2,cab:[.28,.38]},bus:{L:11,W:2.5,H:3.2,cab:[.94,0]},amb:{L:5.4,W:2,H:2.3,cab:[.55,.1]}};
+const scene=new THREE.Scene(),gc={},mc={};
+const geo=(w,h,d)=>gc[[w,h,d]]||(gc[[w,h,d]]=new THREE.BoxGeometry(w,h,d));
+const mat=c=>mc[c]||(mc[c]=new THREE.MeshStandardMaterial({color:c,roughness:.5,metalness:.2}));
+const wG=new THREE.CylinderGeometry(.45,.45,.3,10).rotateX(Math.PI/2),wM=new THREE.MeshStandardMaterial({color:'#05070b'});
+const HLm=new THREE.MeshBasicMaterial({color:'#fff3b0'}),TLm=new THREE.MeshBasicMaterial({color:'#ff2a2a'}),LGg=new THREE.BoxGeometry(.14,.22,.4);
+function mk(k,col,ring){const t=TY[k],g=new THREE.Group(),bh=t.H*.5,add=(m,x,y,z)=>{m.position.set(x,y,z);g.add(m);return m};
+  add(new THREE.Mesh(geo(t.L,bh,t.W),mat(col)),0,bh/2+.35,0);
+  add(new THREE.Mesh(geo(t.L*t.cab[0],t.H*.5,t.W*.92),mat(k==='bus'?'#9fd8ea':'#18202f')),t.L*t.cab[1],bh+.35+t.H*.25,0);
+  for(const x of[-.32,.32])for(const z of[-.5,.5])add(new THREE.Mesh(wG,wM),x*t.L,.45,z*t.W);
+  for(const z of[-.34,.34]){add(new THREE.Mesh(LGg,HLm),t.L/2,.85,z*t.W);add(new THREE.Mesh(LGg,TLm),-t.L/2,.85,z*t.W)}
+  if(k==='amb')g.bar=add(new THREE.Mesh(geo(.6,.25,t.W*.7),new THREE.MeshBasicMaterial({color:'#ef4444'})),0,t.H+.6,0);
+  else add(new THREE.Mesh(geo(t.L*.25,.18,t.W*.5),new THREE.MeshBasicMaterial({color:ring})),t.L*t.cab[1],t.H+.45,0);
+  return g}
+const kind=v=>v.isAmbulance?'amb':v.sectorKey==='PUBLIC'?(v.weightKey==='LIGHT'?'car':'bus'):v.weightKey==='HEAVY'?'truck':v.weightKey==='MEDIUM'?'suv':'car';
+function geoPos(v){const a=v.fromNodeId,b=v.targetNodeId,G=GE[normalizeEdgeKey(a,b)],A=getNodeById(a),B=getNodeById(b);if(!G||!A||!B)return null;
+  const dx=B.x-A.x,dy=B.y-A.y;let t=((v.x-A.x)*dx+(v.y-A.y)*dy)/(dx*dx+dy*dy||1);t=Math.max(0,Math.min(1,t));
+  const r=a>b,q=at(G,(r?1-t:t)*G.len);return r?[q[0],q[1],-q[2],-q[3]]:q}
+const M=new Map(),SG={},BR={};let VS=3,lastB='';
+
+/* ---- Map ---- */
+const bounds=bb(.004);
+const map=new maplibregl.Map({container:'map3d',style:'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',bounds,fitBoundsOptions:{padding:10},pitch:55,bearing:-12,minZoom:13,maxBounds:[[bounds[0][0]-.012,bounds[0][1]-.012],[bounds[1][0]+.012,bounds[1][1]+.012]],maxPitch:80,antialias:true});
+map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'bottom-right');
+const fc=()=>({type:'FeatureCollection',features:ALL.map(([a,b])=>{const k=normalizeEdgeKey(a,b);return{type:'Feature',properties:{key:k,acc:ACC.has(k),b:isBlocked(k),w:ACC.has(k)?1:(KM[k]>=50?1.3:KM[k]>=32?1:.65)},geometry:{type:'LineString',coordinates:GE[k].p.map(toLL)}}})});
+const isBlocked=k=>blockedEdges.has(k)||activeIncidents.has(k);
+const mo=maplibregl.MercatorCoordinate.fromLngLat(O,0),ms=mo.meterInMercatorCoordinateUnits();
+const L=new THREE.Matrix4().makeTranslation(mo.x,mo.y,mo.z).scale(new THREE.Vector3(ms,-ms,ms)).multiply(new THREE.Matrix4().makeRotationX(Math.PI/2));
+const SGeo=new THREE.SphereGeometry(1.7,8,8);
+function frame(){VS=Math.min(10,Math.max(1,294000/2**map.getZoom()));const off=.8*VS,seen=new Set(),tt=performance.now()/1000;
+  for(const v of vehicles){const g=geoPos(v);if(!g)continue;let m=M.get(v);
+    if(!m){m=mk(kind(v),v.isAmbulance?'#f8fafc':v.fillColor,v.ringColor);scene.add(m);M.set(v,m)}
+    seen.add(v);m.position.set(g[0]-g[3]*off,0,-(g[1]+g[2]*off));m.rotation.y=Math.atan2(g[3],g[2]);m.scale.setScalar(VS);
+    if(m.bar)m.bar.material.color.set(Math.floor(tt*6)%2?'#ef4444':'#3b82f6')}
+  for(const[v,m]of M)if(!seen.has(v)){scene.remove(m);M.delete(v)}
+  for(const n of nodes){if(!trafficSignals[n.id]||!NLL[n.id])continue;let s=SG[n.id];
+    if(!s){s=mkSignal();const p=toM(NLL[n.id]);s.g.position.set(p[0],0,-p[1]);scene.add(s.g);SG[n.id]=s}
+    const st=getSignalStates(n.id);s.g.scale.setScalar(Math.min(VS,4)*.9);
+    s.h.forEach(([l,ax])=>{const c=st[ax]==='GREEN'?(st.remaining<=1?1:2):0;l.forEach((m,q)=>m.material.color.set(q===c?[LAMP.R,LAMP.A,LAMP.G][q]:'#2a2f3a'))})}
+  const bl=[...new Set([...blockedEdges,...activeIncidents.keys()])].filter(k=>GE[k]).sort(),sig=bl.join();
+  if(sig!==lastB){lastB=sig;map.getSource('kp')&&map.getSource('kp').setData(fc());
+    for(const k in BR)if(!bl.includes(k)){scene.remove(BR[k]);delete BR[k]}
+    for(const k of bl)if(!BR[k]){const G=GE[k],q=at(G,G.len/2),g=new THREE.Group(),bar=new THREE.Mesh(geo(1.2,1.4,10),new THREE.MeshBasicMaterial({color:'#ef4444'}));
+      bar.position.y=2;g.add(bar);g.position.set(q[0],0,-q[1]);g.rotation.y=Math.atan2(q[3],q[2]);BR[k]=g;scene.add(g)}}
+  for(const k in BR)BR[k].scale.setScalar(VS*.6)}
+const PM=new THREE.MeshStandardMaterial({color:'#374151'}),HM=new THREE.MeshStandardMaterial({color:'#0b0f14'}),LG=new THREE.SphereGeometry(.55,10,10),POLE=new THREE.CylinderGeometry(.18,.18,1,8),LAMP={R:'#ef4444',A:'#f59e0b',G:'#22c55e'};
+function mkSignal(){const g=new THREE.Group(),s={g,h:[]};
+  [[8,-8,'ew',0],[-8,8,'ew',Math.PI],[8,8,'ns',-Math.PI/2],[-8,-8,'ns',Math.PI/2]].forEach(([x,z,ax,ry])=>{
+    const p=new THREE.Group(),pole=new THREE.Mesh(POLE,PM),h=new THREE.Mesh(geo(.9,2.7,.9),HM);p.position.set(x,0,z);p.rotation.y=ry;
+    pole.scale.y=5;pole.position.y=2.5;h.position.y=5.6;p.add(pole,h);
+    const l=[0,1,2].map(i=>{const m=new THREE.Mesh(LG,new THREE.MeshBasicMaterial({color:'#2a2f3a'}));m.position.set(0,6.5-i*.85,.5);p.add(m);return m});
+    g.add(p);s.h.push([l,ax])});return s}
+const bx=(g,w,h,d,x,y,z,c)=>{const m=new THREE.Mesh(geo(w,h,d),mat(c));m.position.set(x,y+h/2,z);g.add(m)};
+const LM={
+  dtc:g=>{bx(g,110,.4,100,0,-.4,0,'#9ccf86');bx(g,70,18,22,0,0,-10,'#efe3cf');bx(g,22,18,55,-28,0,22,'#efe3cf');bx(g,12,36,12,24,0,-10,'#d9b77a');bx(g,14,3,14,24,36,-10,'#9a3412');bx(g,30,6,1.5,0,0,40,'#1d4ed8')},
+  park:g=>{bx(g,90,.4,90,0,-.4,0,'#b8c0cc');[[-25,-20,46],[5,-25,64],[28,0,38],[-10,20,52]].forEach(([x,z,h])=>{bx(g,16,h,16,x,0,z,'#8fb0d8');bx(g,10,3,10,x,h,z,'#475569')})},
+  hosp:g=>{bx(g,90,.4,70,0,-.4,0,'#dfe6ee');bx(g,60,26,30,0,0,0,'#ffffff');bx(g,14,.8,4,0,26,0,'#dc2626');bx(g,4,.8,14,0,26,0,'#dc2626');bx(g,14,.5,14,35,0,25,'#374151')},
+  college:g=>{bx(g,90,.4,80,0,-.4,0,'#a7d28d');bx(g,55,16,20,0,0,0,'#f2d7b0');bx(g,14,32,14,0,0,0,'#c2410c');bx(g,16,3,16,0,32,0,'#7c2d12')},
+  mall:g=>{bx(g,100,.4,80,0,-.4,0,'#cfd6df');bx(g,70,14,45,0,0,0,'#7aa5d8');bx(g,40,5,1.5,0,14,-22,'#f97316')},
+  metro:g=>{bx(g,50,2.5,8,0,12,0,'#cbd5e1');bx(g,52,1.5,10,0,18,0,'#0ea5e9');for(const x of[-20,20])for(const z of[-3,3])bx(g,2,12,2,x,0,z,'#94a3b8')}};
+function placeLandmarks(){[['kp2m'],['pari']].forEach(([k])=>{const g=new THREE.Group(),p=toM(NLL[K(k)]);LM.metro(g);g.position.set(p[0]+40,0,-(p[1])-30);g.scale.setScalar(2);scene.add(g)})}
+/* ===== Geo calibration layer v2 ===== */
+const EF={},KM={},ZN=[],ALLR=BASE_EDGES.map(([a,b])=>[Math.min(a,b),Math.max(a,b)]);
+async function op(q,ms=25000){for(const u of['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter']){
+  try{const c=new AbortController(),tm=setTimeout(()=>c.abort(),ms),r=await fetch(u,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:c.signal});clearTimeout(tm);
+    const j=await r.json();if(j.elements)return j.elements}catch(e){}}return null}
+const bbq=p=>{const[a,b]=bb(p);return`${a[1]},${a[0]},${b[1]},${b[0]}`};
+const pos=e=>e.center?[e.center.lon,e.center.lat]:[e.lon,e.lat],T=e=>(e.tags&&(e.tags.name||e.tags['name:en']))||'';
+/* 1) Anchor: similarity-fit the screenshot-derived seeds to the real OSM metro stations (Pari Chowk, Knowledge Park II). */
+async function anchor(){
+  const els=await op(`[out:json][timeout:25];nwr["railway"="station"]["name"~"Pari Chowk|Knowledge Park",i](${bbq(.02)});out center tags;`,22000);if(!els)return;
+  const P=els.find(e=>/Pari Chowk/i.test(T(e))),Kp=els.find(e=>/Knowledge Park\s*(II|2)/i.test(T(e)));if(!P||!Kp)return;
+  const z1=toM([GEO_ORIGIN.lng,GEO_ORIGIN.lat]),z2=toM(NLL[K('kp2m')]),w1=toM(pos(P)),w2=toM(pos(Kp)),
+    cd=(a,b)=>[a[0]*b[0]-a[1]*b[1],a[0]*b[1]+a[1]*b[0]],dv=(a,b)=>{const d=b[0]*b[0]+b[1]*b[1];return[(a[0]*b[0]+a[1]*b[1])/d,(a[1]*b[0]-a[0]*b[1])/d]},
+    a=dv([w2[0]-w1[0],w2[1]-w1[1]],[z2[0]-z1[0],z2[1]-z1[1]]),sc=Math.hypot(...a),rot=Math.atan2(a[1],a[0])*180/Math.PI;
+  const A=(sc>.6&&sc<1.6&&Math.abs(rot)<25)?a:[1,0];   // reject implausible fits (mis-tagged stations) -> translate only
+  for(const id in NLL){const z=toM(NLL[id]),r=cd(A,[z[0]-z1[0],z[1]-z1[1]]);NLL[id]=toLL([w1[0]+r[0],w1[1]+r[1]])}
+  console.info('[EcoFlow] anchor fit: scale',sc.toFixed(3),'rot',rot.toFixed(1)+'°',A===a?'applied':'rejected->translate')}
+/* 2) Landmarks: resolve every institution / hospital / mall to its real OSM position (nearest match to the seed, <1 km). */
+async function loadLandmarks(){
+  const at_=BASE_NODES.filter(n=>n.isAttraction),els=await op(`[out:json][timeout:25];nwr["name"~"${at_.map(n=>n.osm).join('|')}",i](${bbq(.006)});out center tags;`);
+  if(els)for(const n of at_){const rx=new RegExp(n.osm,'i'),s=toM(NLL[n.id]);let best=null,bd=1000;
+    for(const e of els){if(!rx.test(T(e)))continue;const d=Math.hypot(...[0,1].map(i=>toM(pos(e))[i]-s[i]));if(d<bd){bd=d;best=e}}
+    if(best){NLL[n.id]=pos(best);n.label=T(best)||n.label;n.resolved=true}}
+  populateBlockadeDropdown()}
+/* 3) Roads: real OSM way geometry -> graph; every sim edge follows the time-shortest real route (curves, roundabouts, slip roads). */
+let RPL=[],ROUTED=false;const uk=(u,v)=>u<v?u*1e6+v:v*1e6+u;
+async function loadRoads(){
+  const els=await op(`[out:json][timeout:30];way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential)(_link)?$"]["access"!~"private|no"](${bbq(.003)});out geom;`,35000);
+  if(!els||!els.length)return false;return buildGraph(els,0)||buildGraph(els,32)}
+/* Every OSM road becomes sim topology: a node at each real intersection / road end, an edge for each road stretch between them. */
+function buildGraph(els,minKm){
+  const SPD={motorway:60,trunk:55,primary:50,secondary:40,tertiary:32,unclassified:28,residential:22},id=new Map(),V=[],A=[],NM=[];RPL=[];
+  const vid=(lon,lat)=>{const k=lon.toFixed(6)+','+lat.toFixed(6);let i=id.get(k);if(i===undefined){i=V.length;id.set(k,i);V.push(toM([lon,lat]));A.push([])}return i};
+  for(const w of els){if(!w.geometry)continue;const hw=w.tags.highway.replace('_link','');if((SPD[hw]||22)<minKm)continue;
+    const v=parseInt(w.tags.maxspeed)||SPD[hw]||22,nm=w.tags.name||'',poly=[];let pv=null;
+    for(const g of w.geometry){const u=vid(g.lon,g.lat);poly.push(V[u]);if(nm&&!NM[u])NM[u]=nm;
+      if(pv!==null&&pv!==u&&!A[pv].some(x=>x[0]===u)){const d=Math.hypot(V[u][0]-V[pv][0],V[u][1]-V[pv][1]);A[pv].push([u,d,v,nm]);A[u].push([pv,d,v,nm])}pv=u}
+    RPL.push(poly)}
+  const comp=new Int32Array(V.length).fill(-1);let best=-1,bs=0,nc=0;   // keep the largest connected component
+  for(let s0=0;s0<V.length;s0++){if(comp[s0]>=0)continue;let c=0;const st=[s0];comp[s0]=nc;while(st.length){const u=st.pop();c++;for(const x of A[u])if(comp[x[0]]<0){comp[x[0]]=nc;st.push(x[0])}}if(c>bs){bs=c;best=nc}nc++}
+  const SV={},taken=new Set(),named=BASE_NODES.filter((n,i)=>i<SEED.length&&!n.isAttraction);
+  for(const n of named){const m=toM(NLL[n.id]);let b=-1,bsc=1e18;
+    for(let i=0;i<V.length;i++){if(comp[i]!==best||taken.has(i))continue;const d=Math.hypot(V[i][0]-m[0],V[i][1]-m[1]);if(d>350)continue;const sc=d+(A[i].length>=3?0:60);if(sc<bsc){bsc=sc;b=i}}
+    if(b<0)for(let i=0,bd=1e18;i<V.length;i++){if(comp[i]!==best||taken.has(i))continue;const d=Math.hypot(V[i][0]-m[0],V[i][1]-m[1]);if(d<bd){bd=d;b=i}}
+    SV[n.id]=b;taken.add(b)}
+  const alive=new Uint8Array(V.length);for(let i=0;i<V.length;i++)alive[i]=comp[i]===best?1:0;
+  const deg=i=>A[i].reduce((c,x)=>c+alive[x[0]],0),nv=new Set(Object.values(SV)),q=[];   // prune dead-end spurs
+  for(let i=0;i<V.length;i++)if(alive[i]&&deg(i)<=1&&!nv.has(i))q.push(i);
+  while(q.length){const u=q.pop();if(!alive[u])continue;alive[u]=0;for(const x of A[u])if(alive[x[0]]&&deg(x[0])<=1&&!nv.has(x[0]))q.push(x[0])}
+  const isN=i=>alive[i]&&(nv.has(i)||deg(i)!==2),nid=new Map(),gen=[],E=new Map(),seen=new Set();
+  for(const n of named)nid.set(SV[n.id],n.id);
+  const nidOf=v=>{let i=nid.get(v);if(i===undefined){i=SEED.length+gen.length;nid.set(v,i);gen.push(v)}return i};
+  for(let u=0;u<V.length;u++){if(!isN(u))continue;for(const x of A[u]){if(!alive[x[0]]||seen.has(uk(u,x[0])))continue;
+    let prev=u,cur=x[0],path=[V[u],V[cur]],l=x[1],tt=x[1]/x[2];seen.add(uk(u,cur));
+    while(!isN(cur)){const nx=A[cur].find(y=>alive[y[0]]&&y[0]!==prev);if(!nx){cur=-1;break}seen.add(uk(cur,nx[0]));l+=nx[1];tt+=nx[1]/nx[2];prev=cur;cur=nx[0];path.push(V[cur])}
+    if(cur<0)continue;const a=nidOf(u),b=nidOf(cur);if(a===b)continue;const k=a<b?a+'-'+b:b+'-'+a,o=E.get(k);
+    if(!o||l<o.l)E.set(k,{a:Math.min(a,b),b:Math.max(a,b),p:a<b?path:path.slice().reverse(),l,tt})}}
+  if(minKm===0&&gen.length>900)return false;
+  /* commit */
+  BASE_NODES.length=SEED.length;let sig=0;const gx=[],gy=[];
+  gen.forEach((v,i)=>{const id_=SEED.length+i,ll=toLL(V[v]),fast=A[v].filter(x=>alive[x[0]]&&x[2]>=40).length,hs=deg(v)>=3&&fast>=2&&sig<40;
+    NLL[id_]=ll;gx.push(V[v][0]);gy.push(V[v][1]);BASE_NODES.push({id:id_,key:'g'+id_,label:NM[v]?NM[v]+' Jn':'Junction '+id_,lng:ll[0],lat:ll[1],x:0,y:0,labelPos:'top',hasSignal:hs,isGen:true});
+    if(hs){trafficSignals[id_]={nodeId:id_,phase:(sig%2)*2,timer:(sig*.9)%5,currentLimit:5};sig++}});
+  for(const n of named)NLL[n.id]=toLL(V[SV[n.id]]);
+  BASE_EDGES.length=0;E.forEach(e=>{BASE_EDGES.push([e.a,e.b]);const k=e.a+'-'+e.b;KM[k]=e.l/e.tt;setG(k,e.p)});
+  const srt=([a,b])=>[Math.min(a,b),Math.max(a,b)];ALL.length=0;ALL.push(...BASE_EDGES.map(srt),...BASE_ACCESS_EDGES.map(srt));ALLR.length=0;ALLR.push(...BASE_EDGES.map(srt));
+  const x0=Math.min(...gx),x1=Math.max(...gx),y0=Math.min(...gy),y1=Math.max(...gy),mx=(x1-x0)*.1,my=(y1-y0)*.1;
+  ENTRY.length=0;ENTRY.push(0,4);BASE_NODES.forEach((n,i)=>{if(!n.isGen)return;const p=toM(NLL[n.id]);if(p[0]<x0+mx||p[0]>x1-mx||p[1]<y0+my||p[1]>y1-my)ENTRY.push(n.id)});
+  ROUTED=true;console.info('[EcoFlow] OSM graph:',BASE_NODES.length,'nodes,',BASE_EDGES.length,'edges,',sig+' generated signals,',ENTRY.length,'gateways');return true}
+/* 4) Calibration: per-edge free-flow speed from real road class x real length, normalised so mean = 1 (keeps fleet/emission totals),
+      plus time-of-day landmark-zone friction (school peaks, hospital OPD, mall evenings). */
+const bump=(h,c,w)=>Math.exp(-(((h-c)/w)**2)),ACT={college:h=>.9*bump(h,9,1.4)+.7*bump(h,16.5,1.6),hospital:h=>.8*bump(h,10.5,2.2)+.4*bump(h,17.5,1.5),mall:h=>.5*bump(h,13.5,2)+.9*bump(h,19.5,1.8)};
+function calibrate(){let s=0,c=0;
+  for(const[a,b]of ALLR){const k=normalizeEdgeKey(a,b),A=getNodeById(a),B=getNodeById(b);if(ACC.has(k)||!A||!B||!GE[k]||!GE[k].len)continue;
+    EF[k]=(KM[k]||30)*Math.hypot(A.x-B.x,A.y-B.y)/GE[k].len;s+=EF[k];c++}
+  for(const k in EF)EF[k]=Math.max(.45,Math.min(1.8,EF[k]/(s/c)));
+  ZN.length=0;BASE_NODES.filter(n=>n.isAttraction).forEach(n=>ZN.push({t:n.attractionType,p:toM(NLL[n.id]),R:260}));
+  window.KP_CAL={EF,KM,zones:ZN}}
+function zoneF(k){const h=(simMinutes%1440)/60,m=GE[k].mid||(GE[k].mid=at(GE[k],GE[k].len/2));let f=1;
+  for(const z of ZN){const d=Math.hypot(z.p[0]-m[0],z.p[1]-m[1]);if(d<z.R)f-=.38*ACT[z.t](h)*(1-d/z.R)}return Math.max(.5,f)}
+const _vu=Vehicle.prototype.update;
+Vehicle.prototype.update=function(dt){const k=normalizeEdgeKey(this.fromNodeId,this.targetNodeId);let f=(EF[k]||1)*(GE[k]&&ZN.length?zoneF(k):1);
+  if(this.isAmbulance)f=Math.max(f,.95);const s0=this.speed;this.speed=s0*f;_vu.call(this,dt);this.speed=s0};
+const _grp=generateRandomPath,NIDX=new Map(),_int=initNetworkTopology;
+initNetworkTopology=function(){_int();NIDX.clear();nodes.forEach(n=>NIDX.set(n.id,n))};
+getNodeById=id=>NIDX.get(id)||nodes.find(n=>n.id===id);
+generateRandomPath=function(direction,sId=null,gId=null){
+  const s0=sId!==null?sId:(direction==='EAST'?0:4),g0=gId!==null?gId:(direction==='EAST'?4:0);if(s0===g0)return null;if(!ROUTED)return _grp.apply(null,arguments);
+  const D=new Map([[s0,0]]),P=new Map(),H=[[0,s0]];
+  while(H.length){let m=0;for(let i=1;i<H.length;i++)if(H[i][0]<H[m][0])m=i;const[d,u]=H.splice(m,1)[0];if(d>D.get(u))continue;if(u===g0)break;
+    for(const v of graph[u]||[]){if(isEdgeBlocked(u,v))continue;const k=normalizeEdgeKey(u,v),e=GE[k],c=e?e.len/(KM[k]||30):5,nd=d+c*(.85+.3*Math.random());
+      if(nd<(D.has(v)?D.get(v):1e18)){D.set(v,nd);P.set(v,u);H.push([nd,v])}}}
+  if(!P.has(g0))return null;const r=[g0];for(let u=g0;u!==s0;u=P.get(u))r.push(P.get(u));return r.reverse()};
+/* 5) Commit: push the resolved real-world positions back into the sim graph and restart it on the new geometry. */
+function finalize(){if(ROUTED){drawRoadNetwork=()=>{};Vehicle.prototype.draw=()=>{}}
+  BASE_NODES.forEach(n=>{[n.lng,n.lat]=NLL[n.id]});projectCanvas(BASE_NODES);initNetworkTopology();calibrate();initSimulation();
+  const b=bb(.004);map.fitBounds(b,{padding:10,pitch:55,bearing:-12,duration:0})}
+window.kpExport=()=>JSON.stringify(BASE_NODES.map(n=>({key:n.key,label:n.label,lng:+n.lng.toFixed(6),lat:+n.lat.toFixed(6)})),null,1);
+/* ---- Real footprints: buildings (extruded, campus-coloured), campus/park ground, and tree placement in open land ---- */
+const inP=(p,r)=>{let c=false;for(let i=0,j=r.length-1;i<r.length;j=i++)if((r[i][1]>p[1])!==(r[j][1]>p[1])&&p[0]<(r[j][0]-r[i][0])*(p[1]-r[i][1])/(r[j][1]-r[i][1])+r[i][0])c=!c;return c};
+const loadGround=()=>op(`[out:json][timeout:45];(way["building"](${bbq(.002)});way["amenity"~"^(university|college|hospital|school)$"](${bbq(.002)});way["shop"="mall"](${bbq(.002)});way["landuse"~"^(grass|forest|meadow|recreation_ground|village_green|retail|institutional|education)$"](${bbq(.002)});way["leisure"~"^(park|garden|golf_course)$"](${bbq(.002)});way["natural"~"^(wood|scrub|grassland)$"](${bbq(.002)}););out geom;`,50000);
+const CC={college:'#d8e6c3',hospital:'#e3ebf3',mall:'#dcdce2',school:'#dbe8c8'},BC={college:'#c9835b',hospital:'#f3f5f8',mall:'#6f9bd1',school:'#d9bb92'},DH={college:16,hospital:26,mall:18,school:10};
+function groundData(els){const B=[],C=[],Gn=[];
+  for(const w of els||[]){if(!w.geometry||w.geometry.length<4)continue;const t=w.tags||{},ll=w.geometry.map(g=>[g.lon,g.lat]),r=ll.map(toM),xs=r.map(p=>p[0]),ys=r.map(p=>p[1]),
+    o={ll,r,bx:[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)],t},am=t.amenity,
+    cls=(am==='university'||am==='college')?'college':am==='hospital'?'hospital':(t.shop==='mall'||t.landuse==='retail')?'mall':(am==='school'||t.landuse==='education'||t.landuse==='institutional')?'school':null;
+    o.cls=cls;if(t.building)B.push(o);else if(cls)C.push(o);else Gn.push(o)}
+  for(const b of B){if(b.cls)continue;const c=[(b.bx[0]+b.bx[2])/2,(b.bx[1]+b.bx[3])/2];for(const z of C)if(c[0]>z.bx[0]&&c[0]<z.bx[2]&&c[1]>z.bx[1]&&c[1]<z.bx[3]&&inP(c,z.r)){b.cls=z.cls;break}}
+  return{B,C,Gn}}
+function addGround(D){const poly=(o,p)=>({type:'Feature',properties:p,geometry:{type:'Polygon',coordinates:[o.ll]}}),
+    hh=b=>{const t=b.t,lv=parseFloat(t['building:levels']);return parseFloat(t.height)||(lv?lv*3.3:0)||(b.cls?DH[b.cls]:/apartments|commercial|office|retail|hotel/.test(t.building)?18:7+((b.bx[0]*7+b.bx[1]*13)%5+5)%5)};
+  map.addSource('gnd',{type:'geojson',data:{type:'FeatureCollection',features:[...D.Gn.map(o=>poly(o,{c:/wood|forest/.test((o.t.natural||'')+(o.t.landuse||''))?'#9ccc84':'#bfe3a6'})),...D.C.map(o=>poly(o,{c:CC[o.cls]}))]}});
+  map.addLayer({id:'gnd',type:'fill',source:'gnd',paint:{'fill-color':['get','c'],'fill-opacity':.92}},'kp-curb');
+  if(D.B.length>30){map.getLayer('b3d')&&map.removeLayer('b3d');
+    map.addSource('bld',{type:'geojson',data:{type:'FeatureCollection',features:D.B.map(b=>{const h=hh(b);return poly(b,{h,c:b.cls?BC[b.cls]:h>20?'#cdd3de':'#e6dfd0'})})}});
+    map.addLayer({id:'bld',type:'fill-extrusion',source:'bld',paint:{'fill-extrusion-color':['get','c'],'fill-extrusion-height':['get','h'],'fill-extrusion-base':0,'fill-extrusion-vertical-gradient':true}},'kp-curb');
+    map.addLayer({id:'bld-roof',type:'fill-extrusion',source:'bld',paint:{'fill-extrusion-color':'#7a828d','fill-extrusion-height':['+',['get','h'],.6],'fill-extrusion-base':['get','h']}},'kp-curb')}
+  try{map.setLight({anchor:'map',position:[1.5,205,48],intensity:.6,color:'#fff3df'})}catch(e){}}
+function placeTrees(D){const cs=40,hs=new Map(),key=(x,y)=>Math.floor(x/cs)+','+Math.floor(y/cs),put=(m,k,v)=>(m.get(k)||m.set(k,[]).get(k)).push(v);
+  for(const p of RPL)for(let i=1;i<p.length;i++){const a=p[i-1],b=p[i],n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/12));for(let s=0;s<=n;s++)put(hs,key(a[0]+(b[0]-a[0])*s/n,a[1]+(b[1]-a[1])*s/n),[a[0]+(b[0]-a[0])*s/n,a[1]+(b[1]-a[1])*s/n])}
+  const near=(x,y,R)=>{const cx=Math.floor(x/cs),cy=Math.floor(y/cs);for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const a=hs.get((cx+i)+','+(cy+j));if(a)for(const q of a)if(Math.hypot(q[0]-x,q[1]-y)<R)return true}return false};
+  const bh=new Map(),zh=new Map(),reg=(m,o)=>{for(let x=Math.floor(o.bx[0]/cs);x<=Math.floor(o.bx[2]/cs);x++)for(let y=Math.floor(o.bx[1]/cs);y<=Math.floor(o.bx[3]/cs);y++)put(m,x+','+y,o)};
+  D.B.forEach(o=>reg(bh,o));D.C.forEach(o=>(o.z='c',reg(zh,o)));D.Gn.forEach(o=>(o.z='g',reg(zh,o)));
+  const hit=(m,x,y,pad)=>{for(const o of m.get(key(x,y))||[])if(x>o.bx[0]-pad&&x<o.bx[2]+pad&&y>o.bx[1]-pad&&y<o.bx[3]+pad&&inP([x,y],o.r))return o;return null};
+  const pts=[],xs=[],ys=[];Object.keys(NLL).forEach(k=>{const p=toM(NLL[k]);xs.push(p[0]);ys.push(p[1])});
+  const X0=Math.min(...xs),X1=Math.max(...xs),Y0=Math.min(...ys),Y1=Math.max(...ys);
+  // Spread trees more evenly through open space, while keeping roadsides comparatively clear.
+  for(let x=X0;x<X1;x+=20)for(let y=Y0;y<Y1;y+=20){const px=x+(Math.random()-.5)*16,py=y+(Math.random()-.5)*16;
+    if(near(px,py,24)||hit(bh,px,py,6))continue;const z=hit(zh,px,py,0),p=z?(z.z==='g'?.30:.18):.08;if(Math.random()<p)pts.push([px,py,Math.random()*3|0])}
+  for(const p of RPL)for(let i=1,acc=0;i<p.length;i++){acc+=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);if(acc<300)continue;acc=0;
+    const dx=p[i][0]-p[i-1][0],dy=p[i][1]-p[i-1][1],h=Math.hypot(dx,dy)||1,sd=Math.random()<.5?1:-1,x=p[i][0]-dy/h*13*sd,y=p[i][1]+dx/h*13*sd;
+    if(Math.random()<.01&&!hit(bh,x,y,3))pts.push([x,y,Math.random()*3|0])}   // fewer roadside trees
+  for(let i=pts.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[pts[i],pts[j]]=[pts[j],pts[i]]}
+  const cols=['#4f9d5d','#5fae63','#3f8a52'].map(c=>new THREE.Color(c)),N=Math.min(pts.length,9000),
+    tr=new THREE.InstancedMesh(new THREE.CylinderGeometry(.35,.45,3,6),mat('#6b4f3a'),N),cr=new THREE.InstancedMesh(new THREE.SphereGeometry(2.3,8,6),new THREE.MeshStandardMaterial({roughness:.9}),N),o=new THREE.Object3D();
+  for(let i=0;i<N;i++){const[e,n,c]=pts[i],sc=1.8+Math.random()*1.6;o.position.set(e,1.5*sc,-n);o.scale.setScalar(sc);o.updateMatrix();tr.setMatrixAt(i,o.matrix);
+    o.position.y=4.6*sc;o.scale.set(sc,sc*(1+Math.random()*.4),sc);o.updateMatrix();cr.setMatrixAt(i,o.matrix);cr.setColorAt(i,cols[c])}
+  scene.add(tr,cr);console.info('[EcoFlow] trees:',N,'of',pts.length)}
+const layer={id:'vehicles3d',type:'custom',renderingMode:'3d',
+  onAdd(m,gl){this.cam=new THREE.Camera();scene.add(new THREE.AmbientLight(0xffffff,1.05));
+    const d=new THREE.DirectionalLight(0xffffff,.95);d.position.set(.4,1,.5);scene.add(d);
+    this.rd=new THREE.WebGLRenderer({canvas:m.getCanvas(),context:gl,antialias:true});this.rd.autoClear=false},
+  render(gl,m){frame();this.cam.projectionMatrix=new THREE.Matrix4().fromArray(m.defaultProjectionData?m.defaultProjectionData.mainMatrix:m).multiply(L);
+    this.rd.resetState();this.rd.render(scene,this.cam);map.triggerRepaint()}};
+map.on('load',async()=>{
+  const hint=document.getElementById('canvas-hint'),h0=hint.textContent;hint.textContent='Loading real landmarks and road network…';
+  await anchor();await loadLandmarks();
+  if(!(await loadRoads()))await Promise.all(ALL.map(snap));
+  finalize();hint.textContent='Loading buildings and open land…';const GD=groundData(await loadGround());window.GD=GD;
+  hint.textContent=h0;
+  try{map.addSource('ofm',{type:'vector',url:'https://tiles.openfreemap.org/planet'});
+    map.addLayer({id:'b3d',type:'fill-extrusion',source:'ofm','source-layer':'building',minzoom:13,paint:{
+      'fill-extrusion-color':['interpolate',['linear'],['coalesce',['get','render_height'],9],0,'#ece6db',20,'#ddd8cf',50,'#d0d7e3',120,'#bac7dc'],
+      'fill-extrusion-height':['coalesce',['get','render_height'],9],'fill-extrusion-base':['coalesce',['get','render_min_height'],0],
+      'fill-extrusion-opacity':.96,'fill-extrusion-vertical-gradient':true}})}catch(e){}
+  map.addSource('kp',{type:'geojson',data:fc()});const cap={'line-cap':'round','line-join':'round'},z=(a,b,c)=>['interpolate',['linear'],['zoom'],14,['*',['get','w'],a],17,['*',['get','w'],b],19,['*',['get','w'],c]];
+  map.addLayer({id:'kp-curb',type:'line',source:'kp',layout:cap,paint:{'line-color':'#e5e7eb','line-width':z(9,15,50)}});
+  map.addLayer({id:'kp-case',type:'line',source:'kp',layout:cap,paint:{'line-color':'#1f2937','line-width':z(6,11,40)}});
+  map.addLayer({id:'kp-road',type:'line',source:'kp',layout:cap,paint:{'line-color':['case',['get','b'],'#b91c1c','#4b5563'],'line-width':z(4,8,28)}});
+  map.addLayer({id:'kp-mid',type:'line',source:'kp',paint:{'line-color':['case',['get','b'],'#fb7185','#f59e0b'],'line-opacity':.9,'line-dasharray':[2,2],'line-width':z(.6,1.2,2.6)}});
+  map.addLayer(layer);addGround(GD);placeLandmarks();placeTrees(GD);
+  nodes.forEach(n=>{if(!NLL[n.id]||n.isGen)return;const d=document.createElement('div');d.className='kp-lbl';d.textContent=({college:'🎓 ',hospital:'🏥 ',mall:'🛍 '}[n.attractionType]||'')+n.label;
+    const mk_=new maplibregl.Marker({element:d,anchor:'bottom',offset:[0,-6],draggable:EDIT&&n.isAttraction}).setLngLat(NLL[n.id]).addTo(map);
+    if(EDIT&&n.isAttraction)mk_.on('dragend',()=>{const l=mk_.getLngLat();NLL[n.id]=[l.lng,l.lat];n.lng=l.lng;n.lat=l.lat;for(const[a,b]of ALL)if(a===n.id||b===n.id)setG(normalizeEdgeKey(a,b),[toM(NLL[a]),toM(NLL[b])]);console.info(kpExport())})});
+  const pick=ll=>{const p=toM([ll.lng,ll.lat]);let best=null,bd=1e9,bs=1e9;
+    for(const[a,b]of ALL){const k=normalizeEdgeKey(a,b);if(ACC.has(k))continue;const q=GE[k].p;
+      for(let i=1;i<q.length;i++){const[x0,y0]=q[i-1],[x1,y1]=q[i],dx=x1-x0,dy=y1-y0,t=Math.max(0,Math.min(1,((p[0]-x0)*dx+(p[1]-y0)*dy)/(dx*dx+dy*dy||1))),d=Math.hypot(p[0]-x0-dx*t,p[1]-y0-dy*t);const m=GE[k].mid||(GE[k].mid=at(GE[k],GE[k].len/2)),sc=d+.004*Math.hypot(p[0]-m[0],p[1]-m[1]);if(sc<bs){bs=sc;bd=d;best=k}}}
+    return bd<Math.max(8,137600/2**map.getZoom()*10)?best:null};
+  map.on('click',e=>{const k=pick(e.lngLat);if(k)toggleEdgeBlockade(k)});
+  map.on('mousemove',e=>map.getCanvas().style.cursor=pick(e.lngLat)?'pointer':'');
+});
+window.toggleMapMode=()=>{document.getElementById('canvas-hint').textContent='Road builder is only on the 2D schematic. Here, click any road on the map to block it.'};
+})();
+</script>
+
+</body>
+</html>
